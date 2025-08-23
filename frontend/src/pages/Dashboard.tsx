@@ -109,8 +109,8 @@ export default function Dashboard() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <h1 className="text-2xl font-bold">gohole</h1>
-              <p className="text-muted-foreground">DNS Ad Blocker Dashboard</p>
+              <img src="/gohole.png" alt="Gohole Logo" className="h-12 w-12" />
+              <h1 className="text-2xl font-bold">Gohole</h1>
               <div className="text-xs text-muted-foreground">
                 Last updated: {lastUpdated.toLocaleTimeString()}
               </div>
