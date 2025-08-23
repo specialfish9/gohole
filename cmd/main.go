@@ -3,14 +3,17 @@ package main
 import (
 	"bufio"
 	"gohole/internal/controller/dns"
+	"gohole/internal/controller/http"
 	"gohole/internal/query"
 	"log"
 	"os"
+	"sync"
 )
 
 const (
-	upstream = "1.1.1.1:53"
-	address  = ":53"
+	upstream    = "1.1.1.1:53"
+	dnsAddress  = ":53"
+	httpAddress = ":8080"
 )
 
 func mustParseBlockList(fileName string) []string {
@@ -38,5 +41,12 @@ func mustParseBlockList(fileName string) []string {
 func main() {
 	domains := mustParseBlockList("block.txt")
 
-	dns.Start(query.Trie(domains), address, upstream)
+	wg := sync.WaitGroup{}
+
+	go dns.Start(&wg, query.Trie(domains), dnsAddress, upstream)
+	wg.Add(1)
+	go http.Start(&wg, httpAddress)
+	wg.Add(1)
+
+	wg.Wait()
 }

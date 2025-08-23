@@ -3,11 +3,14 @@ package dns
 import (
 	"gohole/internal/query"
 	"log"
+	"sync"
 
 	"codeberg.org/miekg/dns"
 )
 
-func Start(filter query.Filter, address string, upstream string) {
+func Start(wg *sync.WaitGroup, filter query.Filter, address string, upstream string) {
+	defer wg.Done()
+
 	// Create DNS server
 	d := &handler{
 		upstream:     upstream,
