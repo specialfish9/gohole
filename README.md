@@ -1,1 +1,3 @@
 # gohole
+
+DNS blocker

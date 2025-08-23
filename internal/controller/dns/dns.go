@@ -1,25 +1,18 @@
-package main
+package dns
 
 import (
-	"bufio"
+	"codeberg.org/miekg/dns"
 	"context"
 	"log"
-	"os"
-
-	"codeberg.org/miekg/dns"
 )
 
-const (
-	upstream = "1.1.1.1:53"
-	address  = ":53"
-)
-
-type dnsHandler struct {
-	filter Filter
+type handler struct {
+	upstream string
+	filter   Filter
 }
 
 // handleRequest forwards DNS queries to the upstream server
-func (d *dnsHandler) handleRequest(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) {
+func (d *handler) handleRequest(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) {
 	c := new(dns.Client)
 
 	// Filter queries
@@ -46,7 +39,7 @@ func (d *dnsHandler) handleRequest(ctx context.Context, w dns.ResponseWriter, r 
 
 	log.Printf("IFNO PASS %s", name)
 
-	resp, _, err := c.Exchange(ctx, r, "udp", upstream)
+	resp, _, err := c.Exchange(ctx, r, "udp", d.upstream)
 	if err != nil {
 		log.Printf("ERROR failed to query upstream: %v", err)
 		return
@@ -58,34 +51,11 @@ func (d *dnsHandler) handleRequest(ctx context.Context, w dns.ResponseWriter, r 
 	}
 }
 
-func mustParseBlockList(fileName string) []string {
-	file, err := os.Open(fileName)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer file.Close()
-
-	var lines []string
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := scanner.Text()
-		lines = append(lines, line)
-	}
-
-	if err := scanner.Err(); err != nil {
-		log.Fatal(err)
-	}
-
-	return lines
-}
-
-func main() {
-	domains := mustParseBlockList("block.txt")
-
+func Start(filter Filter, address string, upstream string) {
 	// Create DNS server
-	d := &dnsHandler{
-		filter: Trie(domains),
+	d := &handler{
+		filter:   filter,
+		upstream: upstream,
 	}
 
 	dns.HandleFunc(".", d.handleRequest) // "." = catch-all
