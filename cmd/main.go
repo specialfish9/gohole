@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"gohole/internal/controller/dns"
+	"gohole/internal/query"
 	"log"
 	"os"
 )
@@ -37,5 +38,5 @@ func mustParseBlockList(fileName string) []string {
 func main() {
 	domains := mustParseBlockList("block.txt")
 
-	dns.Start(dns.Trie(domains), address, upstream)
+	dns.Start(query.Trie(domains), address, upstream)
 }

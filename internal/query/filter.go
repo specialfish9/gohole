@@ -1,9 +1,9 @@
-package dns
+package query
 
 import "log"
 
 type Filter interface {
-	// Return true to allow the query, false to block it
+	// Returns true to allow the query, false to block it
 	Filter(q string) (bool, error)
 }
 
