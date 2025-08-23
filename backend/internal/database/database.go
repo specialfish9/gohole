@@ -42,7 +42,7 @@ func Init(ctx context.Context, conn driver.Conn) error {
 			name String,
 			type UInt16,
 			blocked UInt8,
-			timestamp DateTime64(3, 'UTC')  -- stored with ms precision
+			timestamp DateTime,
 		) ENGINE = MergeTree() 
 			ORDER BY (timestamp, type);
 		`,
