@@ -16,7 +16,6 @@ type TrieNode struct {
 }
 
 func (n *TrieNode) Add(s string) (bool, error) {
-	//log.Printf("DEBUG adding %s\n", s)
 	if s == "" {
 		// Added.
 		return true, nil

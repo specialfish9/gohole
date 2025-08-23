@@ -1,7 +1,5 @@
 package query
 
-import "log"
-
 type Filter interface {
 	// Returns true to allow the query, false to block it
 	Filter(q string) (bool, error)
@@ -12,6 +10,9 @@ type TrieFilter struct {
 }
 
 func (f *TrieFilter) Filter(q string) (bool, error) {
+	if q[len(q)-1] == '.' {
+		q = q[:len(q)-1]
+	}
 	found, err := f.root.Contains(q)
 	if err != nil {
 		return false, err
@@ -24,7 +25,6 @@ func Trie(domains []string) Filter {
 	root := new(TrieNode)
 
 	for _, d := range domains {
-		log.Printf("INFO adding %s\n", d)
 		root.Add(d)
 	}
 

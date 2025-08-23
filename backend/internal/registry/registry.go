@@ -1,7 +1,6 @@
 package registry
 
 import (
-	"gohole/internal/blocklist"
 	"gohole/internal/database"
 	"gohole/internal/query"
 
@@ -11,8 +10,6 @@ import (
 type Registry struct {
 	QueryRepository database.Repository
 	QueryService    query.Service
-
-	BlocklistService blocklist.Service
 }
 
 func NewRegistry(domains []string, conn driver.Conn) *Registry {
@@ -22,7 +19,5 @@ func NewRegistry(domains []string, conn driver.Conn) *Registry {
 	return &Registry{
 		QueryRepository: repo,
 		QueryService:    query.NewService(filter, repo),
-
-		BlocklistService: blocklist.NewService(),
 	}
 }

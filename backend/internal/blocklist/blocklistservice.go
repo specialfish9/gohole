@@ -31,6 +31,7 @@ func ReadFromFile(fileName string) ([]string, error) {
 	}
 
 	var domains []string
+	dones := 0
 
 	// TODO parallelize
 	for _, line := range lines {
@@ -40,15 +41,19 @@ func ReadFromFile(fileName string) ([]string, error) {
 			continue
 		}
 
-		log.Printf("INFO Loading blocklist entry: %s", line)
+		log.Printf("INFO Loading blocklist entry: %s\n", line)
 
 		urls, err := download(line)
 		if err != nil {
-			log.Printf("ERROR error downloading blocklist %s: %v", line, err)
+			log.Printf("ERROR error downloading blocklist %s: %v\n", line, err)
+		} else {
+			dones++
 		}
 
 		domains = append(domains, urls...)
 	}
+
+	log.Printf("INFO Loaded %d out of %d blocklists (%d domains)\n", dones, len(lines), len(domains))
 
 	return domains, nil
 }
@@ -79,13 +84,17 @@ func download(url string) ([]string, error) {
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue
 		}
-		// Match ip addreses with regex
-		r := regexp.MustCompile(`[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+`)
-		if r.MatchString(line) {
-			continue
-		}
 
-		result = append(result, line)
+		parts := strings.Split(line, " ")
+		for _, part := range parts {
+			// Match ip addreses with regex
+			r := regexp.MustCompile(`[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+`)
+			if r.MatchString(part) {
+				continue
+			}
+
+			result = append(result, part)
+		}
 	}
 
 	return result, nil
