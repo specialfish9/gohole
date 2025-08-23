@@ -96,10 +96,10 @@ Clean, technical interface with monochromatic design
     --accent-foreground: 0 0% 98%;
 
     /* Status colors for dark theme */
-    --destructive: 0 72% 51%;
+    --destructive: 0 60% 60%;
     --destructive-foreground: 0 0% 100%;
     
-    --success: 142 76% 36%;
+    --success: 142 60% 45%;
     --success-foreground: 0 0% 100%;
     
     --warning: 38 92% 50%;

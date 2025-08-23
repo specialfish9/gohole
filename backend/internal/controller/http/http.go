@@ -36,6 +36,8 @@ func Start(wg *sync.WaitGroup, reg *registry.Registry, address string) {
 	}
 
 	r.Get("/api/queries", errorHandler(qr.getAll))
+	r.Get("/api/queries/stats", errorHandler(qr.getStats))
+	r.Get("/api/queries/stats/history", errorHandler(qr.getStatsHistory))
 
 	log.Printf("INFO HTTP server listening at %s\n", address)
 	if err := http.ListenAndServe(address, r); err != nil {

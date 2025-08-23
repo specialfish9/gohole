@@ -23,7 +23,7 @@ export default function Dashboard() {
       const queryData = await goholeAPI.getQueries()
       setQueries(queryData)
       setLastUpdated(new Date())
-      
+
       toast({
         title: "Queries updated",
         description: `Loaded ${queryData.length} DNS queries`,
@@ -43,7 +43,7 @@ export default function Dashboard() {
   // Auto-refresh queries every 30 seconds
   useEffect(() => {
     fetchQueries()
-    
+
     const refreshInterval = setInterval(fetchQueries, 30000)
     return () => clearInterval(refreshInterval)
   }, [])
@@ -92,7 +92,7 @@ export default function Dashboard() {
     }
   }
 
-  const [barData, setBarData] = useState<Array<{time: string, blocked: number, allowed: number}>>([])
+  const [barData, setBarData] = useState<Array<{ time: string, blocked: number, allowed: number }>>([])
 
   useEffect(() => {
     const loadBarData = async () => {
@@ -142,9 +142,9 @@ export default function Dashboard() {
         <StatsCards data={statsData} />
 
         {/* Charts */}
-        <QueryChart 
-          pieData={pieData} 
-          barData={barData} 
+        <QueryChart
+          pieData={pieData}
+          barData={barData}
           interval={timeInterval}
           granularity={granularity}
           onIntervalChange={setTimeInterval}

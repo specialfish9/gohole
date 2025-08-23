@@ -46,7 +46,7 @@ class GoHoleAPI {
 
   async getStats(interval: string = '24h'): Promise<QueryStats> {
     try {
-      const response = await fetch(`${this.baseURL}/api/stats?interval=${interval}`)
+      const response = await fetch(`${this.baseURL}/api/queries/stats?interval=${interval}`)
       if (!response.ok) {
         // If stats endpoint doesn't exist yet, calculate from queries
         const queries = await this.getQueries()
@@ -63,7 +63,7 @@ class GoHoleAPI {
 
   async getQueryHistory(interval: string = '24h', granularity: string = '1h'): Promise<QueryHistoryPoint[]> {
     try {
-      const response = await fetch(`${this.baseURL}/api/queries/history?interval=${interval}&granularity=${granularity}`)
+      const response = await fetch(`${this.baseURL}/api/queries/stats/history?interval=${interval}&granularity=${granularity}`)
       if (!response.ok) {
         // If history endpoint doesn't exist yet, generate from current queries
         return this.generateHistoryFromQueries(interval, granularity)
