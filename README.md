@@ -2,7 +2,15 @@
 
 DNS blocker
 
+<img src="frontend/public/gohole.png" alt="screenshot" width="300"/>
+
 ## Quick start
+
+Database:
+
+```bash
+docker compose up -d
+```
 
 Backend
 
