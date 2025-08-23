@@ -2,8 +2,10 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"gohole/internal/controller/dns"
 	"gohole/internal/controller/http"
+	"gohole/internal/database"
 	"gohole/internal/registry"
 	"log"
 	"os"
@@ -14,6 +16,10 @@ const (
 	upstream    = "1.1.1.1:53"
 	dnsAddress  = ":53"
 	httpAddress = ":8080"
+	dbAddress   = "localhost:9000"
+	dbUser      = "gohole"
+	dbPassword  = "password"
+	dbName      = "default"
 )
 
 func mustParseBlockList(fileName string) []string {
@@ -41,7 +47,20 @@ func mustParseBlockList(fileName string) []string {
 func main() {
 	domains := mustParseBlockList("block.txt")
 
-	reg := registry.NewRegistry(domains)
+	log.Println("INFO Starting GoHole...")
+	dbConn, err := database.Connect(dbAddress, dbName, dbUser, dbPassword, false)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("INFO Connected to DB")
+
+	if err := database.Init(context.Background(), dbConn); err != nil {
+		log.Fatal(err)
+	}
+
+	log.Printf("INFO created tables")
+
+	reg := registry.NewRegistry(domains, dbConn)
 
 	wg := sync.WaitGroup{}
 

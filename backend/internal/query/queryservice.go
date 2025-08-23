@@ -1,19 +1,20 @@
 package query
 
 import (
+	"context"
 	"fmt"
 	"gohole/internal/database"
-	"log"
 	"math"
 	"time"
 )
 
 type Service interface {
-	Save(q database.Query) error
-	GetAll() ([]database.Query, error)
+	Save(ctx context.Context, q database.Query) error
+	GetAll(ctx context.Context) ([]database.Query, error)
+	GetStats(ctx context.Context, interval Interval) (*Stats, error)
+	GetHistory(ctx context.Context, interval Interval, granularity Granularity) ([]QueryHistoryPoint, error)
+
 	ShouldAllow(name string) (bool, error)
-	GetStats(interval string) (*Stats, error)
-	GetHistory(interval Interval, granularity Granularity) ([]QueryHistoryPoint, error)
 }
 
 type serviceImpl struct {
@@ -21,33 +22,33 @@ type serviceImpl struct {
 	filter Filter
 }
 
-func NewService(filter Filter) Service {
+func NewService(filter Filter, repo database.Repository) Service {
 	return &serviceImpl{
-		repo:   database.NewInMemoryRepository(), // TODO
 		filter: filter,
+		repo:   repo,
 	}
 }
 
-func (s *serviceImpl) Save(q database.Query) error {
-	return s.repo.SaveQuery(q)
+func (s *serviceImpl) Save(ctx context.Context, q database.Query) error {
+	return s.repo.SaveQuery(ctx, q)
 }
 
-func (s *serviceImpl) GetAll() ([]database.Query, error) {
-	return s.repo.FindAll()
+func (s *serviceImpl) GetAll(ctx context.Context) ([]database.Query, error) {
+	return s.repo.FindAll(ctx)
 }
 
 func (s *serviceImpl) ShouldAllow(name string) (bool, error) {
 	return s.filter.Filter(name)
 }
 
-func (s *serviceImpl) GetStats(interval string) (*Stats, error) {
+func (s *serviceImpl) GetStats(ctx context.Context, interval Interval) (*Stats, error) {
 	var err error
 	var queries []database.Query
 
 	if interval == "" {
-		queries, err = s.repo.FindAll()
+		queries, err = s.repo.FindAll(ctx)
 	} else {
-		queries, err = s.repo.FindAllByInterval(interval)
+		queries, err = s.repo.FindAllByInterval(ctx, interval.ToDuration())
 	}
 
 	if err != nil {
@@ -77,12 +78,11 @@ func (s *serviceImpl) GetStats(interval string) (*Stats, error) {
 	}, nil
 }
 
-func (s *serviceImpl) GetHistory(interval Interval, granularity Granularity) ([]QueryHistoryPoint, error) {
+func (s *serviceImpl) GetHistory(ctx context.Context, interval Interval, granularity Granularity) ([]QueryHistoryPoint, error) {
 	timeStep := granularity.ToDuration()
 	stepsNo := interval.ToDuration() / timeStep
 
 	history := make([]QueryHistoryPoint, stepsNo)
-	log.Printf("Debug: interval=%s, granularity=%s, stepsNo=%d, timeStep=%d", interval, granularity, stepsNo, timeStep)
 
 	startTs := time.Now().Unix() - interval.ToDuration()
 
@@ -93,7 +93,7 @@ func (s *serviceImpl) GetHistory(interval Interval, granularity Granularity) ([]
 	}
 
 	// Fetch all the queries
-	queries, err := s.repo.FindAllByInterval("TODO") // TODO: use interval
+	queries, err := s.repo.FindAllByInterval(ctx, interval.ToDuration())
 	if err != nil {
 		return nil, fmt.Errorf("query service: cannot fetch queries: %w", err)
 	}

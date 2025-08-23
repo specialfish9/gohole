@@ -1,32 +1,100 @@
 package database
 
+import (
+	"context"
+	"fmt"
+	"log"
+	"time"
+
+	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
+)
+
 type Repository interface {
-	SaveQuery(q Query) error
-	FindAll() ([]Query, error)
-	FindAllByInterval(interval string) ([]Query, error)
+	SaveQuery(ctx context.Context, q Query) error
+	FindAll(ctx context.Context) ([]Query, error)
+	FindAllByInterval(ctx context.Context, interval int64) ([]Query, error)
 }
 
-type inMemoryRepository struct {
-	queries []Query
+type repositoryImpl struct {
+	conn driver.Conn
 }
 
-func NewInMemoryRepository() *inMemoryRepository {
-	return &inMemoryRepository{
-		queries: make([]Query, 0),
+func NewRepository(conn driver.Conn) Repository {
+	return &repositoryImpl{
+		conn: conn,
 	}
 }
 
-func (r *inMemoryRepository) SaveQuery(q Query) error {
-	r.queries = append(r.queries, q)
+func (r *repositoryImpl) SaveQuery(ctx context.Context, q Query) error {
+	err := r.conn.Exec(ctx, `
+    INSERT INTO query (name, type, blocked, timestamp)
+    VALUES (?, ?, ?, ?)
+    `,
+		q.Name,
+		uint16(0), // TODO
+		q.Blocked,
+		q.Timestamp,
+	)
+
+	if err != nil {
+		return fmt.Errorf("repository: cannot save query: %w", err)
+	}
+
 	return nil
 }
 
-func (r *inMemoryRepository) FindAll() ([]Query, error) {
-	return r.queries, nil
+func (r *repositoryImpl) FindAll(ctx context.Context) ([]Query, error) {
+	rows, err := r.conn.Query(ctx, `
+    SELECT name, type, blocked, timestamp
+    FROM query
+    ORDER BY timestamp DESC
+	`)
+
+	if err != nil {
+		return nil, fmt.Errorf("repository: cannot fetch all queries: %w", err)
+	}
+	defer rows.Close()
+
+	var queries []Query
+
+	for rows.Next() {
+		var q Query
+		var blockedUInt8 uint8
+		if err := rows.Scan(&q.Name, &q.Type, &blockedUInt8, &q.Timestamp); err != nil {
+			log.Printf("ERROR scan failed: %v", err)
+		}
+		q.Blocked = blockedUInt8 != 0
+		queries = append(queries, q)
+	}
+
+	return queries, nil
 }
 
-func (r *inMemoryRepository) FindAllByInterval(interval string) ([]Query, error) {
-	// For simplicity, this implementation ignores the interval and returns all queries.
-	// A real implementation would filter based on the interval.
-	return r.queries, nil
+func (r *repositoryImpl) FindAllByInterval(ctx context.Context, interval int64) ([]Query, error) {
+	lowerBound := time.Now().UTC().Unix() - interval
+	rows, err := r.conn.Query(ctx, `
+    SELECT name, type, blocked, timestamp
+    FROM query
+		WHERE timestamp >= ?
+    ORDER BY timestamp DESC
+	`, lowerBound)
+
+	if err != nil {
+		return nil, fmt.Errorf("repository: cannot fetch all queries: %w", err)
+	}
+	defer rows.Close()
+
+	var queries []Query
+
+	for rows.Next() {
+		var q Query
+		var blockedUInt8 uint8
+		if err := rows.Scan(&q.Name, &q.Type, &blockedUInt8, &q.Timestamp); err != nil {
+			log.Printf("ERROR scan failed: %v", err)
+		}
+		q.Blocked = blockedUInt8 != 0
+		queries = append(queries, q)
+	}
+
+	return queries, nil
 }

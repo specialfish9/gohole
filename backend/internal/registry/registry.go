@@ -1,14 +1,23 @@
 package registry
 
-import "gohole/internal/query"
+import (
+	"gohole/internal/database"
+	"gohole/internal/query"
+
+	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
+)
 
 type Registry struct {
-	QueryService query.Service
+	QueryRepository database.Repository
+	QueryService    query.Service
 }
 
-func NewRegistry(domains []string) *Registry {
+func NewRegistry(domains []string, conn driver.Conn) *Registry {
 	filter := query.Trie(domains)
+	repo := database.NewRepository(conn)
+
 	return &Registry{
-		QueryService: query.NewService(filter),
+		QueryRepository: repo,
+		QueryService:    query.NewService(filter, repo),
 	}
 }

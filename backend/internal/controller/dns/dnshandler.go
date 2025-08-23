@@ -39,14 +39,14 @@ func (d *handler) handleRequest(ctx context.Context, w dns.ResponseWriter, r *dn
 
 		// Save query as blocked
 		q := database.NewQuery(name, question.Header().Class, true)
-		if err := d.queryService.Save(q); err != nil {
+		if err := d.queryService.Save(ctx, q); err != nil {
 			log.Printf("ERROR saving blocked query: %v\n", err)
 		}
 
 		return
 	}
 
-	log.Printf("IFNO PASS %s", name)
+	log.Printf("INFO PASS %s", name)
 
 	resp, _, err := c.Exchange(ctx, r, "udp", d.upstream)
 	if err != nil {
@@ -61,7 +61,7 @@ func (d *handler) handleRequest(ctx context.Context, w dns.ResponseWriter, r *dn
 
 	// Save query
 	q := database.NewQuery(name, question.Header().Class, false)
-	if err := d.queryService.Save(q); err != nil {
+	if err := d.queryService.Save(ctx, q); err != nil {
 		log.Printf("ERROR saving passed query: %v\n", err)
 	}
 }

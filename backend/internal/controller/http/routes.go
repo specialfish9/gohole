@@ -14,7 +14,7 @@ type queryRouter struct {
 }
 
 func (qr *queryRouter) getAll(w http.ResponseWriter, r *http.Request) error {
-	query, err := qr.queryService.GetAll()
+	query, err := qr.queryService.GetAll(r.Context())
 	if err != nil {
 		return err
 	}
@@ -30,9 +30,12 @@ func (qr *queryRouter) getAll(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (qr *queryRouter) getStats(w http.ResponseWriter, r *http.Request) error {
-	interval := chi.URLParam(r, "interval")
+	interval := query.Interval(chi.URLParam(r, "interval"))
+	if !interval.IsValid() {
+		return fmt.Errorf("invalid interval value %s", interval)
+	}
 
-	stats, err := qr.queryService.GetStats(interval)
+	stats, err := qr.queryService.GetStats(r.Context(), interval)
 	if err != nil {
 		return err
 	}
@@ -57,7 +60,7 @@ func (qr *queryRouter) getStatsHistory(w http.ResponseWriter, r *http.Request) e
 		return fmt.Errorf("invalid granularity parameter value: '%s'", granularity)
 	}
 
-	history, err := qr.queryService.GetHistory(interval, granularity)
+	history, err := qr.queryService.GetHistory(r.Context(), interval, granularity)
 	if err != nil {
 		return err
 	}
