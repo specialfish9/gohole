@@ -11,6 +11,8 @@ import (
 	"strings"
 )
 
+// ReadFromFile reads a file containing URLs of blocklists, downloads them, and
+// returns a list of domains.
 func ReadFromFile(fileName string) ([]string, error) {
 	file, err := os.Open(fileName)
 	if err != nil {

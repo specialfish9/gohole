@@ -46,6 +46,8 @@ func Init(ctx context.Context, conn driver.Conn) error {
 		) ENGINE = MergeTree() 
 			ORDER BY (timestamp, type);
 		`,
+
+		`DELETE FROM blocklist WHERE true;`,
 		`
 		CREATE TABLE IF NOT EXISTS blocklist (
 			url String

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"gohole/internal/database"
+	"log"
 	"math"
 	"time"
 )
@@ -79,16 +80,17 @@ func (s *serviceImpl) GetStats(ctx context.Context, interval Interval) (*Stats, 
 }
 
 func (s *serviceImpl) GetHistory(ctx context.Context, interval Interval, granularity Granularity) ([]QueryHistoryPoint, error) {
-	timeStep := granularity.ToDuration()
-	stepsNo := interval.ToDuration() / timeStep
+	granularityStep := granularity.ToDuration()
+	stepsNo := interval.ToDuration() / granularityStep
 
 	history := make([]QueryHistoryPoint, stepsNo)
 
+	// FIXME: this does not handle the timezone properly. Fix it later.
 	startTs := time.Now().Unix() - interval.ToDuration()
 
 	// First, set all the timestamps
 	for i, _ := range history {
-		ts := startTs + (int64(i) * timeStep)
+		ts := startTs + (int64(i) * granularityStep)
 		history[i].Time = time.Unix(ts, 0).Format(time.RFC3339)
 	}
 
@@ -106,7 +108,7 @@ func (s *serviceImpl) GetHistory(ctx context.Context, interval Interval, granula
 	// Then, update all the history points
 	for _, query := range queries {
 		// Index represents which history point this query belongs to
-		index := int((query.Timestamp - startTs) / timeStep)
+		index := int((query.Timestamp - startTs) / granularityStep)
 
 		if query.Blocked {
 			history[index].Blocked++
