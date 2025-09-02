@@ -16,6 +16,10 @@ type TrieNode struct {
 }
 
 func (n *TrieNode) Add(s string) (bool, error) {
+	return n.add(s + "\x00") // Append null character to mark the end of the string.
+}
+
+func (n *TrieNode) add(s string) (bool, error) {
 	if s == "" {
 		// Added.
 		return true, nil
@@ -34,8 +38,11 @@ func (n *TrieNode) Add(s string) (bool, error) {
 }
 
 func (n *TrieNode) Contains(s string) (bool, error) {
+	return n.contains(s + "\x00")
+}
+
+func (n *TrieNode) contains(s string) (bool, error) {
 	if s == "" {
-		// TODO check if this is an end node
 		return true, nil
 	}
 
