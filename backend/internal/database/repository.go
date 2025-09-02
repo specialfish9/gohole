@@ -12,7 +12,7 @@ import (
 type Repository interface {
 	SaveQuery(ctx context.Context, q Query) error
 	FindAll(ctx context.Context) ([]Query, error)
-	FindAllByInterval(ctx context.Context, interval int64) ([]Query, error)
+	FindAllByInterval(ctx context.Context, lowerBound time.Time) ([]Query, error)
 }
 
 type repositoryImpl struct {
@@ -75,14 +75,15 @@ func (r *repositoryImpl) FindAll(ctx context.Context) ([]Query, error) {
 	return queries, nil
 }
 
-// FindAllByInterval fetches all queries made within the last 'interval' seconds.
-func (r *repositoryImpl) FindAllByInterval(ctx context.Context, interval int64) ([]Query, error) {
+// FindAllByInterval retrieves all queries from the database that were made
+// after the specified lowerBound.
+func (r *repositoryImpl) FindAllByInterval(ctx context.Context, lowerBound time.Time) ([]Query, error) {
 	rows, err := r.conn.Query(ctx, `
     SELECT name, type, blocked, timestamp
     FROM query
-		WHERE timestamp >= now() - INTERVAL ? SECOND
+		WHERE timestamp >= ?
     ORDER BY timestamp DESC
-	`, interval)
+	`, lowerBound)
 
 	if err != nil {
 		return nil, fmt.Errorf("repository: cannot fetch all queries: %w", err)

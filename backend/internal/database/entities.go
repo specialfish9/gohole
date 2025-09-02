@@ -14,6 +14,6 @@ func NewQuery(name string, qtype uint16, blocked bool) Query {
 		Name:      name,
 		Type:      qtype,
 		Blocked:   blocked,
-		Timestamp: time.Now().Unix(),
+		Timestamp: time.Now().UTC().Unix(),
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"gohole/internal/database"
+	"log/slog"
 	"math"
 	"time"
 )
@@ -48,7 +49,7 @@ func (s *serviceImpl) GetStats(ctx context.Context, interval Interval) (*Stats, 
 	if interval == "" {
 		queries, err = s.repo.FindAll(ctx)
 	} else {
-		queries, err = s.repo.FindAllByInterval(ctx, interval.ToDuration())
+		queries, err = s.repo.FindAllByInterval(ctx, time.Now().UTC().Add(-time.Duration(interval.ToDuration())))
 	}
 
 	if err != nil {
@@ -79,22 +80,23 @@ func (s *serviceImpl) GetStats(ctx context.Context, interval Interval) (*Stats, 
 }
 
 func (s *serviceImpl) GetHistory(ctx context.Context, interval Interval, granularity Granularity) ([]QueryHistoryPoint, error) {
-	granularityStep := granularity.ToDuration()
-	stepsNo := interval.ToDuration() / granularityStep
+	granularityStep := granularity.ToDuration().Seconds()
+	stepsNo := interval.ToDuration().Seconds() / granularityStep
 
-	history := make([]QueryHistoryPoint, stepsNo)
+	history := make([]QueryHistoryPoint, int(math.Ceil(stepsNo)))
 
 	// FIXME: this does not handle the timezone properly. Fix it later.
-	startTs := time.Now().Unix() - interval.ToDuration()
+	startTs := time.Now().UTC().Add(-interval.ToDuration())
 
 	// First, set all the timestamps
 	for i, _ := range history {
-		ts := startTs + (int64(i) * granularityStep)
-		history[i].Time = time.Unix(ts, 0).Format(time.RFC3339)
+		ts := startTs.Add(granularity.ToDuration() * time.Duration(i))
+		slog.Debug("history point", "i", i, "ts", ts)
+		history[i].Time = ts.Format(time.RFC3339)
 	}
 
 	// Fetch all the queries
-	queries, err := s.repo.FindAllByInterval(ctx, interval.ToDuration())
+	queries, err := s.repo.FindAllByInterval(ctx, startTs)
 	if err != nil {
 		return nil, fmt.Errorf("query service: cannot fetch queries: %w", err)
 	}
@@ -107,7 +109,7 @@ func (s *serviceImpl) GetHistory(ctx context.Context, interval Interval, granula
 	// Then, update all the history points
 	for _, query := range queries {
 		// Index represents which history point this query belongs to
-		index := int((query.Timestamp - startTs) / granularityStep)
+		index := int((query.Timestamp - startTs.UnixMilli()) / int64(granularity.ToDuration().Milliseconds()))
 
 		if query.Blocked {
 			history[index].Blocked++

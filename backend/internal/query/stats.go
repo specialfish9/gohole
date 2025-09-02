@@ -1,5 +1,7 @@
 package query
 
+import "time"
+
 type Stats struct {
 	TotalQueries   int     `json:"totalQueries"`
 	BlockedQueries int     `json:"blockedQueries"`
@@ -32,18 +34,19 @@ func (i Interval) IsValid() bool {
 	}
 }
 
-func (i Interval) ToDuration() int64 {
+// ToDuration converts the interval to its equivalent duration in seconds.
+func (i Interval) ToDuration() time.Duration {
 	switch i {
 	case Interval1H:
-		return 3600
+		return 3600 * time.Second
 	case Interval6H:
-		return 21600
+		return 21600 * time.Second
 	case Interval1D:
-		return 86400
+		return 86400 * time.Second
 	case Interval7D:
-		return 604800
+		return 604800 * time.Second
 	case Interval30D:
-		return 2592000
+		return 2592000 * time.Second
 	default:
 		return 0
 	}
@@ -69,21 +72,21 @@ func (g Granularity) IsValid() bool {
 	}
 }
 
-// ToDuration converts the granularity to its equivalent duration in seconds.
-func (g Granularity) ToDuration() int64 {
+// ToDuration converts the granularity to its equivalent duration.
+func (g Granularity) ToDuration() time.Duration {
 	switch g {
 	case Granularity1M:
-		return 60
+		return 60 * time.Second
 	case Granularity5M:
-		return 300
+		return 300 * time.Second
 	case Granularity15M:
-		return 900
+		return 900 * time.Second
 	case Granularity1H:
-		return 3600
+		return 3600 * time.Second
 	case Granularity6H:
-		return 21600
+		return 21600 * time.Second
 	case Granularity1D:
-		return 86400
+		return 86400 * time.Second
 	default:
 		return 0
 	}

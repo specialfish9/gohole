@@ -29,6 +29,8 @@ func main() {
 	fmt.Println(" GOHOLE ")
 	fmt.Println("========")
 
+	slog.SetLogLoggerLevel(slog.LevelDebug)
+
 	domains, err := blocklist.ReadFromFile(blocklistFile)
 	if err != nil {
 		slog.Error(err.Error())
