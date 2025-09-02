@@ -4,7 +4,7 @@ import (
 	"context"
 	"gohole/internal/database"
 	"gohole/internal/query"
-	"log"
+	"log/slog"
 
 	"codeberg.org/miekg/dns"
 )
@@ -25,43 +25,43 @@ func (d *handler) handleRequest(ctx context.Context, w dns.ResponseWriter, r *dn
 	allow, err := d.queryService.ShouldAllow(name)
 	if err != nil || !allow {
 		if err != nil {
-			log.Printf("ERROR Filtering: %v", err)
+			slog.Error("Filtering", "error", err.Error())
 		}
-		log.Printf("INFO SMASH %s", name)
+		slog.Info("SMASH " + name)
 		m := new(dns.Msg)
 		m.Rcode = dns.RcodeRefused
 		m.ID = r.ID
 
 		_, err := m.WriteTo(w)
 		if err != nil {
-			log.Printf("ERROR Failed to write refusal response: %v", err)
+			slog.Error("Failed to write refusal response", "error", err.Error())
 		}
 
 		// Save query as blocked
 		q := database.NewQuery(name, question.Header().Class, true)
 		if err := d.queryService.Save(ctx, q); err != nil {
-			log.Printf("ERROR saving blocked query: %v\n", err)
+			slog.Error("saving blocked query: " + err.Error())
 		}
 
 		return
 	}
 
-	log.Printf("INFO PASS %s", name)
+	slog.Info("PASS " + name)
 
 	resp, _, err := c.Exchange(ctx, r, "udp", d.upstream)
 	if err != nil {
-		log.Printf("ERROR failed to query upstream: %v", err)
+		slog.Error("failed to query upstream", "error", err)
 		return
 	}
 
 	_, err = resp.WriteTo(w)
 	if err != nil {
-		log.Printf("ERROR failed to write response: %v", err)
+		slog.Error("failed to write response", "error", err)
 	}
 
 	// Save query
 	q := database.NewQuery(name, question.Header().Class, false)
 	if err := d.queryService.Save(ctx, q); err != nil {
-		log.Printf("ERROR saving passed query: %v\n", err)
+		slog.Error("saving passed query", "error", err)
 	}
 }

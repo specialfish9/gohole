@@ -2,12 +2,14 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"gohole/internal/blocklist"
 	"gohole/internal/controller/dns"
 	"gohole/internal/controller/http"
 	"gohole/internal/database"
 	"gohole/internal/registry"
-	"log"
+	"log/slog"
+	"os"
 	"sync"
 )
 
@@ -23,26 +25,29 @@ const (
 )
 
 func main() {
-	log.Println("========")
-	log.Println(" GOHOLE ")
-	log.Println("========")
+	fmt.Println("========")
+	fmt.Println(" GOHOLE ")
+	fmt.Println("========")
 
 	domains, err := blocklist.ReadFromFile(blocklistFile)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error(err.Error())
+		os.Exit(1)
 	}
 
 	dbConn, err := database.Connect(dbAddress, dbName, dbUser, dbPassword, false)
 	if err != nil {
-		log.Fatal(err)
+		slog.Error(err.Error())
+		os.Exit(1)
 	}
-	log.Printf("INFO Connected to DB")
+	slog.Info("Connected to DB")
 
 	if err := database.Init(context.Background(), dbConn); err != nil {
-		log.Fatal(err)
+		slog.Error(err.Error())
+		os.Exit(1)
 	}
 
-	log.Printf("INFO created tables")
+	slog.Info("created tables")
 
 	reg := registry.NewRegistry(domains, dbConn)
 

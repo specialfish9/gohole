@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"gohole/internal/database"
-	"log"
 	"math"
 	"time"
 )

@@ -3,6 +3,7 @@ package http
 import (
 	"gohole/internal/registry"
 	"log"
+	"log/slog"
 	"net/http"
 	"sync"
 
@@ -39,7 +40,7 @@ func Start(wg *sync.WaitGroup, reg *registry.Registry, address string) {
 	r.Get("/api/queries/stats", errorHandler(qr.getStats))
 	r.Get("/api/queries/stats/history", errorHandler(qr.getStatsHistory))
 
-	log.Printf("INFO HTTP server listening at %s\n", address)
+	slog.Info("Started HTTP server", "address", address)
 	if err := http.ListenAndServe(address, r); err != nil {
 		log.Fatal(err)
 	}

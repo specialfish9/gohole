@@ -2,7 +2,8 @@ package dns
 
 import (
 	"gohole/internal/registry"
-	"log"
+	"log/slog"
+	"os"
 	"sync"
 
 	"codeberg.org/miekg/dns"
@@ -24,9 +25,10 @@ func Start(wg *sync.WaitGroup, reg *registry.Registry, address string, upstream 
 		Net:  "udp",
 	}
 
-	log.Printf("Starting DNS proxy on %s, forwarding to %s\n", address, upstream)
+	slog.Info("Started DNS server", "address", address, "upstream", upstream)
 	err := server.ListenAndServe()
 	if err != nil {
-		log.Fatalf("Failed to start server: %s\n", err.Error())
+		slog.Error("Failed to start server", "error", err.Error())
+		os.Exit(1)
 	}
 }

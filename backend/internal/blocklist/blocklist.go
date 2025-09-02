@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"regexp"
@@ -43,11 +43,11 @@ func ReadFromFile(fileName string) ([]string, error) {
 			continue
 		}
 
-		log.Printf("INFO Loading blocklist entry: %s\n", line)
+		slog.Info("Loading blocklist entry", "entry", line)
 
 		urls, err := download(line)
 		if err != nil {
-			log.Printf("ERROR error downloading blocklist %s: %v\n", line, err)
+			slog.Error("Downloading blocklist", "blocklist", line, "error", err)
 		} else {
 			dones++
 		}
@@ -55,7 +55,7 @@ func ReadFromFile(fileName string) ([]string, error) {
 		domains = append(domains, urls...)
 	}
 
-	log.Printf("INFO Loaded %d out of %d blocklists (%d domains)\n", dones, len(lines), len(domains))
+	slog.Info(fmt.Sprintf("Loaded %d out of %d blocklists (%d domains)\n", dones, len(lines), len(domains)))
 
 	return domains, nil
 }

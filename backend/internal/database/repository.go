@@ -3,7 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
-	"log"
+	"log/slog"
 	"time"
 
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
@@ -26,7 +26,6 @@ func NewRepository(conn driver.Conn) Repository {
 }
 
 func (r *repositoryImpl) SaveQuery(ctx context.Context, q Query) error {
-	log.Printf("DEBUG saving query: %+v", q)
 	err := r.conn.Exec(ctx, `
     INSERT INTO query (name, type, blocked, timestamp)
     VALUES (?, ?, ?, ?)
@@ -65,7 +64,7 @@ func (r *repositoryImpl) FindAll(ctx context.Context) ([]Query, error) {
 
 		err := rows.Scan(&q.Name, &q.Type, &blockedUInt8, &q.Timestamp)
 		if err != nil {
-			log.Printf("ERROR scan failed: %v", err)
+			slog.Error("scan failed", "error", err)
 			continue
 		}
 
@@ -97,14 +96,12 @@ func (r *repositoryImpl) FindAllByInterval(ctx context.Context, interval int64) 
 		var q Query
 		var blockedUInt8 uint8
 		if err := rows.Scan(&q.Name, &q.Type, &blockedUInt8, &q.Timestamp); err != nil {
-			log.Printf("ERROR scan failed: %v", err)
+			slog.Error("scan failed", "error", err)
 			continue
 		}
 		q.Blocked = blockedUInt8 != 0
 		queries = append(queries, q)
 	}
-
-	log.Printf("DEBUG fetched %d queries within the last %d seconds", len(queries), interval)
 
 	return queries, nil
 }

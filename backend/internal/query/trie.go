@@ -34,7 +34,6 @@ func (n *TrieNode) Add(s string) (bool, error) {
 }
 
 func (n *TrieNode) Contains(s string) (bool, error) {
-	//log.Printf("DEBUG looking for %s\n", s)
 	if s == "" {
 		// TODO check if this is an end node
 		return true, nil
