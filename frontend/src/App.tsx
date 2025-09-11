@@ -9,6 +9,8 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+console.log("Backend at ", import.meta.env.VITE_API_BASE_URL);
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider defaultTheme="dark" storageKey="gohole-ui-theme">

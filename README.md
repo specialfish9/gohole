@@ -9,7 +9,7 @@ DNS blocker
 Database:
 
 ```bash
-docker compose up -d
+docker compose -f compose.dev.yaml up -d
 ```
 
 Backend
@@ -26,4 +26,10 @@ Frontend
 cd frontend
 npm i
 npm run dev
+```
+
+## Docker run
+
+```bash
+docker compose up
 ```

@@ -12,6 +12,6 @@ func serveStatic(r *chi.Mux) {
 	workDir, _ := os.Getwd()
 	feDir := http.Dir(filepath.Join(workDir, "frontend"))
 
-	fs := http.StripPrefix("/static", http.FileServer(feDir))
-	r.Handle("/static/*", fs)
+	fs := http.StripPrefix("/", http.FileServer(feDir))
+	r.Handle("/*", fs)
 }
