@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"gohole/internal/database"
-	"log/slog"
 	"math"
 	"time"
 )
@@ -14,7 +13,7 @@ type Service interface {
 	GetAll(ctx context.Context) ([]database.Query, error)
 	GetStats(ctx context.Context, interval Interval) (*Stats, error)
 	GetHistory(ctx context.Context, interval Interval, granularity Granularity) ([]QueryHistoryPoint, error)
-
+	GetBlockListStats() (*BlockListStats, error)
 	ShouldAllow(name string) (bool, error)
 }
 
@@ -91,7 +90,6 @@ func (s *serviceImpl) GetHistory(ctx context.Context, interval Interval, granula
 	// First, set all the timestamps
 	for i, _ := range history {
 		ts := startTs.Add(granularity.ToDuration() * time.Duration(i))
-		slog.Debug("history point", "i", i, "ts", ts)
 		history[i].Time = ts.Format(time.RFC3339)
 	}
 
@@ -119,4 +117,10 @@ func (s *serviceImpl) GetHistory(ctx context.Context, interval Interval, granula
 	}
 
 	return history, nil
+}
+
+func (s *serviceImpl) GetBlockListStats() (*BlockListStats, error) {
+	return &BlockListStats{
+		TotalEntries: s.filter.Size(),
+	}, nil
 }

@@ -31,3 +31,5 @@ go.work.sum
 # .idea/
 # .vscode/
 clickhouse/
+grafana/
+backend/frontend/

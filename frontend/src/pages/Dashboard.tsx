@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { goholeAPI, type Query } from "@/lib/api"
+import { goholeAPI, type Query, type BlocklistStats } from "@/lib/api"
 import { StatsCards } from "@/components/dashboard/stats-cards"
 import { QueryChart } from "@/components/dashboard/query-chart"
 import { QueryTable } from "@/components/dashboard/query-table"
@@ -15,6 +15,7 @@ export default function Dashboard() {
   const [timeInterval, setTimeInterval] = useState("24h")
   const [granularity, setGranularity] = useState("1h")
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
+  const [blocklistStats, setBlocklistStats] = useState<BlocklistStats>()
   const { toast } = useToast()
 
   const fetchQueries = async () => {
@@ -40,9 +41,19 @@ export default function Dashboard() {
     }
   }
 
+  const fetchBlocklistStats = async () => {
+    try {
+      const blstats = await goholeAPI.getBlocklistStats()
+      setBlocklistStats(blstats)
+    } catch (error) {
+      console.error('Failed to fetch blocklist stats:', error)
+    }
+  }
+
   // Auto-refresh queries every 30 seconds
   useEffect(() => {
     fetchQueries()
+    fetchBlocklistStats()
 
     const refreshInterval = setInterval(fetchQueries, 30000)
     return () => clearInterval(refreshInterval)
@@ -67,12 +78,14 @@ export default function Dashboard() {
   const blockedQueries = queries.filter(q => q.blocked).length
   const allowedQueries = totalQueries - blockedQueries
   const blockRate = totalQueries > 0 ? (blockedQueries / totalQueries) * 100 : 0
+  const totalEntries = blocklistStats ? blocklistStats.totalEntries : 0
 
   const statsData = {
     totalQueries,
     blockedQueries,
     allowedQueries,
-    blockRate
+    blockRate,
+    totalEntries,
   }
 
   // Chart data

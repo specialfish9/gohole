@@ -91,3 +91,7 @@ func (g Granularity) ToDuration() time.Duration {
 		return 0
 	}
 }
+
+type BlockListStats struct {
+	TotalEntries int `json:"totalEntries"`
+}

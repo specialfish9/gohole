@@ -1,12 +1,17 @@
 package query
 
+import "log/slog"
+
 type Filter interface {
-	// Returns true to allow the query, false to block it
+	// Filter rturns true to allow the query, false to block it
 	Filter(q string) (bool, error)
+	// Size returns the number of entries in the filter
+	Size() int
 }
 
 type TrieFilter struct {
 	root *TrieNode
+	size int
 }
 
 func (f *TrieFilter) Filter(q string) (bool, error) {
@@ -22,13 +27,24 @@ func (f *TrieFilter) Filter(q string) (bool, error) {
 }
 
 func Trie(domains []string) Filter {
-	root := new(TrieNode)
+	root := NewTrieNode()
+
+	addedDomains := 0
 
 	for _, d := range domains {
-		root.Add(d)
+		if err := root.Add(d); err != nil {
+			slog.Error("cannot add domain to trie", "domain", d, "error", err)
+		} else {
+			addedDomains++
+		}
 	}
 
 	return &TrieFilter{
 		root: root,
+		size: addedDomains,
 	}
+}
+
+func (f *TrieFilter) Size() int {
+	return f.size
 }

@@ -12,7 +12,7 @@ import (
 	"github.com/go-chi/cors"
 )
 
-func Start(wg *sync.WaitGroup, reg *registry.Registry, address string) {
+func Start(wg *sync.WaitGroup, reg *registry.Registry, address string, serverFrontend bool) {
 	defer wg.Done()
 
 	r := chi.NewRouter()
@@ -39,6 +39,12 @@ func Start(wg *sync.WaitGroup, reg *registry.Registry, address string) {
 	r.Get("/api/queries", errorHandler(qr.getAll))
 	r.Get("/api/queries/stats", errorHandler(qr.getStats))
 	r.Get("/api/queries/stats/history", errorHandler(qr.getStatsHistory))
+
+	r.Get("/api/blocklist/stats", errorHandler(qr.getBlockListStats))
+
+	if serverFrontend {
+		serveStatic(r)
+	}
 
 	slog.Info("Started HTTP server", "address", address)
 	if err := http.ListenAndServe(address, r); err != nil {

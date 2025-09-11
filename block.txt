@@ -1,0 +1,1 @@
+https://raw.githubusercontent.com/blocklistproject/Lists/refs/heads/master/basic.txt

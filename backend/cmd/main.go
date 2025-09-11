@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"gohole/config"
 	"gohole/internal/blocklist"
 	"gohole/internal/controller/dns"
 	"gohole/internal/controller/http"
@@ -13,40 +14,55 @@ import (
 	"sync"
 )
 
-const (
-	upstream      = "1.1.1.1:53"
-	dnsAddress    = ":53"
-	httpAddress   = ":8080"
-	dbAddress     = "localhost:9000"
-	dbUser        = "gohole"
-	dbPassword    = "password"
-	dbName        = "default"
-	blocklistFile = "block.txt"
-)
+const defaultConfigPath = "./gohole.conf"
+
+func logPanic(v any) {
+	slog.Error(fmt.Sprintf("%v", v))
+	fmt.Println("Bye :O")
+	os.Exit(1)
+}
 
 func main() {
 	fmt.Println("========")
 	fmt.Println(" GOHOLE ")
 	fmt.Println("========")
 
+	var configPath string
+	if len(os.Args) > 1 {
+		// The first argument is the config path
+		configPath = os.Args[1]
+	} else {
+		configPath = defaultConfigPath
+	}
+
+	cfg, err := config.New(configPath)
+	if err != nil {
+		logPanic(err.Error())
+	}
+
+	// TODO handle log level from config
 	slog.SetLogLoggerLevel(slog.LevelDebug)
 
-	domains, err := blocklist.ReadFromFile(blocklistFile)
+	domains, err := blocklist.ReadFromFile(cfg.BlocklistFile)
 	if err != nil {
-		slog.Error(err.Error())
-		os.Exit(1)
+		logPanic(err.Error())
 	}
 
-	dbConn, err := database.Connect(dbAddress, dbName, dbUser, dbPassword, false)
+	dbConn, err := database.Connect(
+		cfg.DBAddress,
+		cfg.DBName,
+		cfg.DBUser,
+		cfg.DBPassword,
+		false,
+	)
 	if err != nil {
-		slog.Error(err.Error())
-		os.Exit(1)
+		logPanic(err.Error())
 	}
+
 	slog.Info("Connected to DB")
 
 	if err := database.Init(context.Background(), dbConn); err != nil {
-		slog.Error(err.Error())
-		os.Exit(1)
+		logPanic(err.Error())
 	}
 
 	slog.Info("created tables")
@@ -55,9 +71,9 @@ func main() {
 
 	wg := sync.WaitGroup{}
 
-	go dns.Start(&wg, reg, dnsAddress, upstream)
+	go dns.Start(&wg, reg, cfg.DNSAddress, cfg.Upstream)
 	wg.Add(1)
-	go http.Start(&wg, reg, httpAddress)
+	go http.Start(&wg, reg, cfg.HTTPAddress, cfg.ServeFrontend)
 	wg.Add(1)
 
 	wg.Wait()

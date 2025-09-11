@@ -18,6 +18,10 @@ interface QueryHistoryPoint {
   allowed: number
 }
 
+interface BlocklistStats {
+  totalEntries: number
+}
+
 class GoHoleAPI {
   private baseURL: string
 
@@ -73,6 +77,19 @@ class GoHoleAPI {
       console.error('Failed to fetch query history:', error)
       // Fallback to generated data
       return this.generateHistoryFromQueries(interval, granularity)
+    }
+  }
+
+  async getBlocklistStats(): Promise<BlocklistStats> {
+    try {
+      const response = await fetch(`${this.baseURL}/api/blocklist/stats`)
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      return await response.json()
+    } catch (error) {
+      console.error('Failed to fetch blocklist stats:', error)
+      throw error
     }
   }
 
@@ -198,4 +215,4 @@ class GoHoleAPI {
 
 // Export singleton instance
 export const goholeAPI = new GoHoleAPI("http://localhost:8080")
-export type { Query, QueryStats, QueryHistoryPoint }
+export type { Query, QueryStats, QueryHistoryPoint, BlocklistStats }

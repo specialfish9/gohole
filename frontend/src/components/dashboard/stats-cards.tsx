@@ -7,12 +7,24 @@ interface StatsCardsProps {
     blockedQueries: number
     allowedQueries: number
     blockRate: number
+    totalEntries: number
   }
 }
 
 export function StatsCards({ data }: StatsCardsProps) {
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Blocklist entries</CardTitle>
+          <Activity className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">{data.totalEntries}</div>
+          <p className="text-xs text-muted-foreground">domains</p>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Total Queries</CardTitle>
@@ -23,7 +35,7 @@ export function StatsCards({ data }: StatsCardsProps) {
           <p className="text-xs text-muted-foreground">DNS requests processed</p>
         </CardContent>
       </Card>
-      
+
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Blocked Queries</CardTitle>
@@ -34,7 +46,7 @@ export function StatsCards({ data }: StatsCardsProps) {
           <p className="text-xs text-muted-foreground">Ads & trackers blocked</p>
         </CardContent>
       </Card>
-      
+
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Allowed Queries</CardTitle>
@@ -45,7 +57,7 @@ export function StatsCards({ data }: StatsCardsProps) {
           <p className="text-xs text-muted-foreground">Legitimate requests</p>
         </CardContent>
       </Card>
-      
+
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Block Rate</CardTitle>

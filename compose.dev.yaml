@@ -15,17 +15,17 @@ services:
       nofile:
         soft: 262144
         hard: 262144
-  gohole:
-    build: .
-    container_name: gohole
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+    user: "${UID:-1000}"  
     links:
       - clickhouse
     ports:
-      - "8080:8080/tcp"
-      - "8053:8053/tcp"
-      - "53:53/udp"
-    cap_add:
-      - NET_ADMIN
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
     volumes:
-      - ./gohole.conf:/gohole.conf
-      - ./block.txt:/block.txt
+      - ./grafana:/var/lib/grafana
