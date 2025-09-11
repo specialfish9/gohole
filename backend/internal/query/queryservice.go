@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"gohole/internal/database"
+	"gohole/internal/filter"
 	"math"
 	"time"
 )
@@ -19,10 +20,10 @@ type Service interface {
 
 type serviceImpl struct {
 	repo   database.Repository
-	filter Filter
+	filter filter.Filter
 }
 
-func NewService(filter Filter, repo database.Repository) Service {
+func NewService(filter filter.Filter, repo database.Repository) Service {
 	return &serviceImpl{
 		filter: filter,
 		repo:   repo,

@@ -1,4 +1,4 @@
-package query
+package filter
 
 type TrieNode struct {
 	children map[rune]*TrieNode

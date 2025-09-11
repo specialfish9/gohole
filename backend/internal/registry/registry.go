@@ -2,6 +2,7 @@ package registry
 
 import (
 	"gohole/internal/database"
+	"gohole/internal/filter"
 	"gohole/internal/query"
 
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
@@ -13,7 +14,7 @@ type Registry struct {
 }
 
 func NewRegistry(domains []string, conn driver.Conn) *Registry {
-	filter := query.Trie(domains)
+	filter := filter.Trie(domains)
 	repo := database.NewRepository(conn)
 
 	return &Registry{

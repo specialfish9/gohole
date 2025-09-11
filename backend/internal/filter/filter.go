@@ -1,4 +1,4 @@
-package query
+package filter
 
 import "log/slog"
 
