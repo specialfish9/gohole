@@ -1,0 +1,29 @@
+name: Build Docker Image
+
+env:
+  DOCKER_IMAGE: gohole
+  DOCKER_USER: specialfish9
+  DOCKER_USERNAME: specialfish9
+  DOCKER_PWD: ${{ secrets.DOCKER_PWD }}
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+    
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Get current date
+      id: date
+      run: echo "::set-output name=date::$(date +'%Y-%m-%d')"
+
+    - name: docker login
+      run: docker login -u $DOCKER_USERNAME -p $DOCKER_PWD
+
+    - name: Build and push Docker image
+      run: docker build --push -t ${{ env.DOCKER_USER }}/${{ env.DOCKER_IMAGE }}:latest -t ${{ env.DOCKER_USER }}/${{ env.DOCKER_IMAGE }}:${{ steps.date.outputs.date }} .
