@@ -43,11 +43,6 @@ func main() {
 	// TODO handle log level from config
 	slog.SetLogLoggerLevel(slog.LevelDebug)
 
-	domains, err := blocklist.ReadFromFile(cfg.BlocklistFile)
-	if err != nil {
-		logPanic(err.Error())
-	}
-
 	dbConn, err := database.Connect(
 		cfg.DBAddress,
 		cfg.DBName,
@@ -66,6 +61,11 @@ func main() {
 	}
 
 	slog.Info("created tables")
+
+	domains, err := blocklist.ReadFromFile(cfg.BlocklistFile)
+	if err != nil {
+		logPanic(err.Error())
+	}
 
 	reg := registry.NewRegistry(domains, dbConn)
 
