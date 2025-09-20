@@ -2,9 +2,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Badge } from "@/components/ui/badge"
+import { Shield, CheckCircle } from "lucide-react"
+import { HostStat } from "@/lib/api"
 
 interface QueryChartProps {
   pieData: Array<{ name: string; value: number; color: string }>
+  hostData: Array<HostStat>
   barData: Array<{ time: string; blocked: number; allowed: number }>
   interval: string
   granularity: string
@@ -29,14 +34,27 @@ const granularityOptions = [
   { value: "1d", label: "1 Day" }
 ]
 
-export function QueryChart({ 
-  pieData, 
-  barData, 
-  interval, 
-  granularity, 
-  onIntervalChange, 
-  onGranularityChange 
+const hostPieColors = [
+  "#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#8dd1e1",
+  "#a4de6c", "#d0ed57", "#ffc0cb", "#b0e0e6", "#f4a460"
+];
+
+export function QueryChart({
+  pieData,
+  hostData,
+  barData,
+  interval,
+  granularity,
+  onIntervalChange,
+  onGranularityChange
 }: QueryChartProps) {
+  const hostPieData = hostData.map((host) => ({
+    name: host.host,
+    value: host.queryCount,
+  }))
+
+  hostData.sort((a, b) => b.queryCount - a.queryCount)
+
   // Custom tooltip for bar chart
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -145,31 +163,112 @@ export function QueryChart({
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={barData}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-              <XAxis 
-                dataKey="time" 
+              <XAxis
+                dataKey="time"
                 className="text-xs fill-muted-foreground"
                 tick={{ fontSize: 12 }}
               />
-              <YAxis 
+              <YAxis
                 className="text-xs fill-muted-foreground"
                 tick={{ fontSize: 12 }}
               />
               <Tooltip content={<CustomTooltip />} />
               <Legend />
-              <Bar 
-                dataKey="blocked" 
-                name="Blocked" 
+              <Bar
+                dataKey="blocked"
+                name="Blocked"
                 fill="hsl(var(--destructive))"
                 radius={[2, 2, 0, 0]}
               />
-              <Bar 
-                dataKey="allowed" 
-                name="Allowed" 
+              <Bar
+                dataKey="allowed"
+                name="Allowed"
                 fill="hsl(var(--success))"
                 radius={[2, 2, 0, 0]}
               />
             </BarChart>
           </ResponsiveContainer>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Hosts activity </CardTitle>
+          <div className="text-sm text-muted-foreground">
+            Current period: {intervalOptions.find(opt => opt.value === interval)?.label}
+          </div>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+                data={hostPieData}
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={120}
+                paddingAngle={5}
+                dataKey="value"
+              >
+                {hostData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={hostPieColors[index]} />
+                ))}
+              </Pie>
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Hosts stats</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Host</TableHead>
+                <TableHead>Queries</TableHead>
+                <TableHead>Blocked</TableHead>
+                <TableHead>Block rate</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {hostData.map((hostStat, index) => (
+                <TableRow key={index}>
+                  <TableCell className="font-mono text-sm max-w-[300px] truncate">
+                    {hostStat.host}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="font-mono">
+                      {hostStat.queryCount}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="font-mono">
+                      {hostStat.blockedCount}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      {true ? (
+                        <>
+                          <Shield className="h-4 w-4 text-destructive" />
+                          <Badge variant="destructive">{hostStat.blockRate}%</Badge>
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle className="h-4 w-4 text-success" />
+                          <Badge className="bg-success text-success-foreground">Allowed</Badge>
+                        </>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
     </div>

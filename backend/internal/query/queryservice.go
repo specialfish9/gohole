@@ -15,6 +15,7 @@ type Service interface {
 	GetStats(ctx context.Context, interval Interval) (*Stats, error)
 	GetHistory(ctx context.Context, interval Interval, granularity Granularity) ([]QueryHistoryPoint, error)
 	GetBlockListStats() (*BlockListStats, error)
+	GetHostStats(ctx context.Context) ([]database.HostStat, error)
 	ShouldAllow(name string) (bool, error)
 }
 
@@ -108,7 +109,7 @@ func (s *serviceImpl) GetHistory(ctx context.Context, interval Interval, granula
 	// Then, update all the history points
 	for _, query := range queries {
 		// Index represents which history point this query belongs to
-		index := int((query.Timestamp - startTs.UnixMilli()) / int64(granularity.ToDuration().Milliseconds()))
+		index := int((query.Timestamp - startTs.Unix()) / int64(granularity.ToDuration().Seconds()))
 
 		if query.Blocked {
 			history[index].Blocked++
@@ -124,4 +125,8 @@ func (s *serviceImpl) GetBlockListStats() (*BlockListStats, error) {
 	return &BlockListStats{
 		TotalEntries: s.filter.Size(),
 	}, nil
+}
+
+func (s *serviceImpl) GetHostStats(ctx context.Context) ([]database.HostStat, error) {
+	return s.repo.FindHostStats(ctx)
 }

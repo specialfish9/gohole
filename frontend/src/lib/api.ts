@@ -1,6 +1,7 @@
 interface Query {
   name: string
   type: string
+  host: string
   blocked: boolean
   timestamp?: string
 }
@@ -20,6 +21,13 @@ interface QueryHistoryPoint {
 
 interface BlocklistStats {
   totalEntries: number
+}
+
+interface HostStat {
+  host: string
+  queryCount: number
+  blockedCount: number
+  blockRate: number
 }
 
 class GoHoleAPI {
@@ -89,6 +97,19 @@ class GoHoleAPI {
       return await response.json()
     } catch (error) {
       console.error('Failed to fetch blocklist stats:', error)
+      throw error
+    }
+  }
+
+  async getHostStats(): Promise<HostStat[]> {
+    try {
+      const response = await fetch(`${this.baseURL}/api/hosts/stats`)
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      return await response.json()
+    } catch (error) {
+      console.error('Failed to fetch host stats:', error)
       throw error
     }
   }
@@ -216,4 +237,4 @@ class GoHoleAPI {
 // Export singleton instance
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || window.location.origin;
 export const goholeAPI = new GoHoleAPI(API_BASE_URL)
-export type { Query, QueryStats, QueryHistoryPoint, BlocklistStats }
+export type { Query, QueryStats, QueryHistoryPoint, BlocklistStats, HostStat }

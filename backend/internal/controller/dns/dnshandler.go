@@ -21,13 +21,14 @@ func (d *handler) handleRequest(ctx context.Context, w dns.ResponseWriter, r *dn
 	// Filter queries
 	question := r.Question[0]
 	name := question.Header().Name
+	host := w.RemoteAddr().String()
 
 	allow, err := d.queryService.ShouldAllow(name)
 	if err != nil || !allow {
 		if err != nil {
 			slog.Error("Filtering", "error", err.Error())
 		}
-		slog.Info("SMASH " + name)
+		slog.Info("SMASH "+name, "host", host)
 		m := new(dns.Msg)
 		m.Rcode = dns.RcodeRefused
 		m.ID = r.ID
@@ -38,7 +39,7 @@ func (d *handler) handleRequest(ctx context.Context, w dns.ResponseWriter, r *dn
 		}
 
 		// Save query as blocked
-		q := database.NewQuery(name, question.Header().Class, true)
+		q := database.NewQuery(name, question.Header().Class, host, true)
 		if err := d.queryService.Save(ctx, q); err != nil {
 			slog.Error("saving blocked query: " + err.Error())
 		}
@@ -46,7 +47,7 @@ func (d *handler) handleRequest(ctx context.Context, w dns.ResponseWriter, r *dn
 		return
 	}
 
-	slog.Info("PASS " + name)
+	slog.Info("PASS "+name, "host", host)
 
 	resp, _, err := c.Exchange(ctx, r, "udp", d.upstream)
 	if err != nil {
@@ -60,7 +61,7 @@ func (d *handler) handleRequest(ctx context.Context, w dns.ResponseWriter, r *dn
 	}
 
 	// Save query
-	q := database.NewQuery(name, question.Header().Class, false)
+	q := database.NewQuery(name, question.Header().Class, host, false)
 	if err := d.queryService.Save(ctx, q); err != nil {
 		slog.Error("saving passed query", "error", err)
 	}

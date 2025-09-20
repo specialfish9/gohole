@@ -95,3 +95,19 @@ func (qr *queryRouter) getBlockListStats(w http.ResponseWriter, r *http.Request)
 
 	return nil
 }
+
+func (qr *queryRouter) getHostStats(w http.ResponseWriter, r *http.Request) error {
+	stats, err := qr.queryService.GetHostStats(r.Context())
+	if err != nil {
+		return err
+	}
+
+	b, err := json.Marshal(&stats)
+	if err != nil {
+		return err
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Write(b)
+
+	return nil
+}

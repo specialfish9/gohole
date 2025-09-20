@@ -7,6 +7,7 @@ interface Query {
   name: string
   type: string
   blocked: boolean
+  host: string
   timestamp?: string
 }
 
@@ -25,6 +26,7 @@ export function QueryTable({ queries }: QueryTableProps) {
           <TableHeader>
             <TableRow>
               <TableHead>Domain</TableHead>
+              <TableHead>Host</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Time</TableHead>
@@ -35,6 +37,11 @@ export function QueryTable({ queries }: QueryTableProps) {
               <TableRow key={index}>
                 <TableCell className="font-mono text-sm max-w-[300px] truncate">
                   {query.name}
+                </TableCell>
+                <TableCell>
+                  <Badge variant="outline" className="font-mono">
+                    {query.host}
+                  </Badge>
                 </TableCell>
                 <TableCell>
                   <Badge variant="outline" className="font-mono">

@@ -103,6 +103,7 @@ type Query struct {
 	Name      string `json:"name"`
 	Type      uint16 `json:"type"`
 	Blocked   bool   `json:"blocked"`
+	Host      string `json:"host"`
 	Timestamp string `json:"timestamp"`
 }
 
@@ -111,6 +112,7 @@ func QueryFromDB(q database.Query) Query {
 		Name:      q.Name,
 		Type:      q.Type,
 		Blocked:   q.Blocked,
+		Host:      q.Host,
 		Timestamp: time.Unix(q.Timestamp, 0).UTC().Format(time.RFC3339),
 	}
 }

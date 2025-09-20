@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { goholeAPI, type Query, type BlocklistStats } from "@/lib/api"
+import { goholeAPI, type Query, type BlocklistStats, type HostStat } from "@/lib/api"
 import { StatsCards } from "@/components/dashboard/stats-cards"
 import { QueryChart } from "@/components/dashboard/query-chart"
 import { QueryTable } from "@/components/dashboard/query-table"
@@ -16,6 +16,7 @@ export default function Dashboard() {
   const [granularity, setGranularity] = useState("1h")
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
   const [blocklistStats, setBlocklistStats] = useState<BlocklistStats>()
+  const [hostStats, setHostStats] = useState<HostStat[]>([])
   const { toast } = useToast()
 
   const fetchQueries = async () => {
@@ -50,10 +51,20 @@ export default function Dashboard() {
     }
   }
 
+  const fetchHostStats = async () => {
+    try {
+      const hstats = await goholeAPI.getHostStats()
+      setHostStats(hstats)
+    } catch (error) {
+      console.error('Failed to fetch host stats:', error)
+    }
+  }
+
   // Auto-refresh queries every 30 seconds
   useEffect(() => {
     fetchQueries()
     fetchBlocklistStats()
+    fetchHostStats()
 
     const refreshInterval = setInterval(fetchQueries, 30000)
     return () => clearInterval(refreshInterval)
@@ -158,6 +169,7 @@ export default function Dashboard() {
         <QueryChart
           pieData={pieData}
           barData={barData}
+          hostData={hostStats}
           interval={timeInterval}
           granularity={granularity}
           onIntervalChange={setTimeInterval}
