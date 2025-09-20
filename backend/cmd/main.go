@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"gohole/config"
 	"gohole/internal/blocklist"
