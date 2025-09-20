@@ -5,6 +5,7 @@ import (
 	"gohole/internal/database"
 	"gohole/internal/query"
 	"log/slog"
+	"strings"
 
 	"codeberg.org/miekg/dns"
 )
@@ -21,7 +22,7 @@ func (d *handler) handleRequest(ctx context.Context, w dns.ResponseWriter, r *dn
 	// Filter queries
 	question := r.Question[0]
 	name := question.Header().Name
-	host := w.RemoteAddr().String()
+	host := strings.Split(w.RemoteAddr().String(), ":")[0]
 
 	allow, err := d.queryService.ShouldAllow(name)
 	if err != nil || !allow {
