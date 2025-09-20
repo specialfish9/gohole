@@ -22,6 +22,13 @@ func logPanic(v any) {
 }
 
 func main() {
+	f, err := os.OpenFile("log.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		logPanic(err.Error())
+	}
+	defer f.Close()
+	slog.SetDefault(slog.New(slog.NewTextHandler(f, &slog.HandlerOptions{AddSource: true})))
+
 	fmt.Println("========")
 	fmt.Println(" GOHOLE ")
 	fmt.Println("========")
@@ -40,14 +47,6 @@ func main() {
 	}
 
 	slog.Debug("log file is set", "file", cfg.LogFile)
-	if cfg.LogFile != "" {
-		f, err := os.OpenFile(cfg.LogFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		if err != nil {
-			logPanic(err.Error())
-		}
-		defer f.Close()
-		slog.SetDefault(slog.New(slog.NewTextHandler(f, &slog.HandlerOptions{AddSource: true})))
-	}
 
 	// TODO handle log level from config
 	slog.SetLogLoggerLevel(slog.LevelDebug)
