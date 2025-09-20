@@ -1,6 +1,9 @@
 package query
 
-import "time"
+import (
+	"gohole/internal/database"
+	"time"
+)
 
 type Stats struct {
 	TotalQueries   int     `json:"totalQueries"`
@@ -94,4 +97,20 @@ func (g Granularity) ToDuration() time.Duration {
 
 type BlockListStats struct {
 	TotalEntries int `json:"totalEntries"`
+}
+
+type Query struct {
+	Name      string `json:"name"`
+	Type      uint16 `json:"type"`
+	Blocked   bool   `json:"blocked"`
+	Timestamp string `json:"timestamp"`
+}
+
+func QueryFromDB(q database.Query) Query {
+	return Query{
+		Name:      q.Name,
+		Type:      q.Type,
+		Blocked:   q.Blocked,
+		Timestamp: time.Unix(q.Timestamp, 0).UTC().Format(time.RFC3339),
+	}
 }

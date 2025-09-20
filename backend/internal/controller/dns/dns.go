@@ -1,6 +1,7 @@
 package dns
 
 import (
+	"context"
 	"gohole/internal/registry"
 	"log/slog"
 	"os"
@@ -18,7 +19,7 @@ func Start(wg *sync.WaitGroup, reg *registry.Registry, address string, upstream 
 		queryService: reg.QueryService,
 	}
 
-	dns.HandleFunc(".", d.handleRequest) // "." = catch-all
+	dns.HandleFunc(".", recoverMiddleware(d.handleRequest)) // "." = catch-all
 
 	server := &dns.Server{
 		Addr: address,
@@ -30,5 +31,17 @@ func Start(wg *sync.WaitGroup, reg *registry.Registry, address string, upstream 
 	if err != nil {
 		slog.Error("Failed to start server", "error", err.Error())
 		os.Exit(1)
+	}
+}
+
+func recoverMiddleware(next func(context.Context, dns.ResponseWriter, *dns.Msg)) func(context.Context, dns.ResponseWriter, *dns.Msg) {
+	return func(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) {
+		defer func() {
+			if r := recover(); r != nil {
+				slog.Error("PANIC!", "message", r)
+			}
+		}()
+
+		next(ctx, w, r)
 	}
 }

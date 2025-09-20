@@ -11,7 +11,7 @@ import (
 
 type Service interface {
 	Save(ctx context.Context, q database.Query) error
-	GetAll(ctx context.Context) ([]database.Query, error)
+	GetAll(ctx context.Context, limit int) ([]database.Query, error)
 	GetStats(ctx context.Context, interval Interval) (*Stats, error)
 	GetHistory(ctx context.Context, interval Interval, granularity Granularity) ([]QueryHistoryPoint, error)
 	GetBlockListStats() (*BlockListStats, error)
@@ -34,7 +34,7 @@ func (s *serviceImpl) Save(ctx context.Context, q database.Query) error {
 	return s.repo.SaveQuery(ctx, q)
 }
 
-func (s *serviceImpl) GetAll(ctx context.Context) ([]database.Query, error) {
+func (s *serviceImpl) GetAll(ctx context.Context, limit int) ([]database.Query, error) {
 	return s.repo.FindAll(ctx)
 }
 

@@ -14,12 +14,17 @@ type queryRouter struct {
 }
 
 func (qr *queryRouter) getAll(w http.ResponseWriter, r *http.Request) error {
-	query, err := qr.queryService.GetAll(r.Context())
+	queries, err := qr.queryService.GetAll(r.Context(), 100)
 	if err != nil {
 		return err
 	}
 
-	b, err := json.Marshal(&query)
+	jsonQueries := make([]query.Query, len(queries))
+	for i, q := range queries {
+		jsonQueries[i] = query.QueryFromDB(q)
+	}
+
+	b, err := json.Marshal(&jsonQueries)
 	if err != nil {
 		return err
 	}

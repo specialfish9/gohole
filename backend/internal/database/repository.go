@@ -12,6 +12,7 @@ import (
 type Repository interface {
 	SaveQuery(ctx context.Context, q Query) error
 	FindAll(ctx context.Context) ([]Query, error)
+	FindAllLimit(ctx context.Context, limit int) ([]Query, error)
 	FindAllByInterval(ctx context.Context, lowerBound time.Time) ([]Query, error)
 }
 
@@ -45,12 +46,23 @@ func (r *repositoryImpl) SaveQuery(ctx context.Context, q Query) error {
 }
 
 func (r *repositoryImpl) FindAll(ctx context.Context) ([]Query, error) {
-	rows, err := r.conn.Query(ctx, `
-    SELECT name, type, blocked, timestamp
-    FROM query
-    ORDER BY timestamp DESC
-	`)
+	return r.FindAllLimit(ctx, -1)
+}
 
+func (r *repositoryImpl) FindAllLimit(ctx context.Context, limit int) ([]Query, error) {
+	baseQuery := `
+		SELECT name, type, blocked, timestamp
+		FROM query
+		ORDER BY timestamp DESC
+  `
+	args := []any{}
+
+	if limit > 0 {
+		baseQuery += " LIMIT ?"
+		args = append(args, limit)
+	}
+
+	rows, err := r.conn.Query(ctx, baseQuery, args...)
 	if err != nil {
 		return nil, fmt.Errorf("repository: cannot fetch all queries: %w", err)
 	}
