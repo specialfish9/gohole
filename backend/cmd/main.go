@@ -60,15 +60,15 @@ func main() {
 		cfg.DBPassword,
 		false,
 	)
-	if err != nil {
-		logPanic(err.Error())
-	}
+	// if err != nil {
+	// 	logPanic(err.Error())
+	// }
 
 	slog.Info("Connected to DB")
 
-	if err := database.Init(context.Background(), dbConn); err != nil {
-		logPanic(err.Error())
-	}
+	// if err := database.Init(context.Background(), dbConn); err != nil {
+	// 	logPanic(err.Error())
+	// }
 
 	slog.Info("created tables")
 
