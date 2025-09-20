@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"gohole/config"
 	"gohole/internal/blocklist"
@@ -46,8 +47,6 @@ func main() {
 		logPanic(err.Error())
 	}
 
-	slog.Debug("log file is set", "file", cfg.LogFile)
-
 	// TODO handle log level from config
 	slog.SetLogLoggerLevel(slog.LevelDebug)
 
@@ -58,15 +57,15 @@ func main() {
 		cfg.DBPassword,
 		false,
 	)
-	// if err != nil {
-	// 	logPanic(err.Error())
-	// }
+	if err != nil {
+		logPanic(err.Error())
+	}
 
 	slog.Info("Connected to DB")
 
-	// if err := database.Init(context.Background(), dbConn); err != nil {
-	// 	logPanic(err.Error())
-	// }
+	if err := database.Init(context.Background(), dbConn); err != nil {
+		logPanic(err.Error())
+	}
 
 	slog.Info("created tables")
 
