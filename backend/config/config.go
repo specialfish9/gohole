@@ -17,6 +17,7 @@ type Config struct {
 	DBName        string `confuso:"db_name" validate:"required"`
 	BlocklistFile string `confuso:"blocklist_file" validate:"required"`
 	LogLevel      string `confuso:"log_level" validate:"required"`
+	LogFile       string `confuso:"log_file"`
 	ServeFrontend bool   `confuso:"serve_frontend"`
 }
 
