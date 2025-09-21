@@ -23,12 +23,12 @@ func logPanic(v any) {
 }
 
 func main() {
-	f, err := os.OpenFile("log.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		logPanic(err.Error())
-	}
-	defer f.Close()
-	slog.SetDefault(slog.New(slog.NewTextHandler(f, &slog.HandlerOptions{AddSource: true})))
+	// f, err := os.OpenFile("log.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	// if err != nil {
+	// 	logPanic(err.Error())
+	// }
+	// defer f.Close()
+	// slog.SetDefault(slog.New(slog.NewTextHandler(f, &slog.HandlerOptions{AddSource: true})))
 
 	fmt.Println("========")
 	fmt.Println(" GOHOLE ")

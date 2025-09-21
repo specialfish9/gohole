@@ -101,9 +101,9 @@ class GoHoleAPI {
     }
   }
 
-  async getHostStats(): Promise<HostStat[]> {
+  async getHostStats(interval: string = '24h'): Promise<HostStat[]> {
     try {
-      const response = await fetch(`${this.baseURL}/api/hosts/stats`)
+      const response = await fetch(`${this.baseURL}/api/hosts/stats?interval=${interval}`)
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }

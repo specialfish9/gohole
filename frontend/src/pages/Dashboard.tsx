@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react"
-import { goholeAPI, type Query, type BlocklistStats, type HostStat } from "@/lib/api"
+import { goholeAPI, type Query, type BlocklistStats, type HostStat, QueryStats } from "@/lib/api"
 import { StatsCards } from "@/components/dashboard/stats-cards"
 import { QueryChart } from "@/components/dashboard/query-chart"
 import { QueryTable } from "@/components/dashboard/query-table"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { RefreshCw, Settings, Upload } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 export default function Dashboard() {
+  const [stats, setStats] = useState<QueryStats>()
   const [queries, setQueries] = useState<Query[]>([])
   const [loading, setLoading] = useState(false)
   const [timeInterval, setTimeInterval] = useState("24h")
@@ -24,12 +24,11 @@ export default function Dashboard() {
     try {
       const queryData = await goholeAPI.getQueries()
       setQueries(queryData)
-      setLastUpdated(new Date())
 
-      toast({
-        title: "Queries updated",
-        description: `Loaded ${queryData.length} DNS queries`,
-      })
+      // toast({
+      //   title: "Queries updated",
+      //   description: `Loaded ${queryData.length} DNS queries`,
+      // })
     } catch (error) {
       console.error('Failed to fetch queries:', error)
       toast({
@@ -39,6 +38,17 @@ export default function Dashboard() {
       })
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchStats = async () => {
+    try {
+      // This will fall back to calculating stats from queries if the endpoint doesn't exist yet
+      const stats = await goholeAPI.getStats(timeInterval)
+      setStats(stats)
+      setLastUpdated(new Date())
+    } catch (error) {
+      console.error('Failed to fetch stats:', error)
     }
   }
 
@@ -53,7 +63,7 @@ export default function Dashboard() {
 
   const fetchHostStats = async () => {
     try {
-      const hstats = await goholeAPI.getHostStats()
+      const hstats = await goholeAPI.getHostStats(timeInterval)
       setHostStats(hstats)
     } catch (error) {
       console.error('Failed to fetch host stats:', error)
@@ -62,6 +72,7 @@ export default function Dashboard() {
 
   // Auto-refresh queries every 30 seconds
   useEffect(() => {
+    fetchStats()
     fetchQueries()
     fetchBlocklistStats()
     fetchHostStats()
@@ -73,6 +84,7 @@ export default function Dashboard() {
   // Fetch updated chart data when timeInterval or granularity changes
   useEffect(() => {
     fetchChartData()
+    fetchHostStats()
   }, [timeInterval, granularity])
 
   const fetchChartData = async () => {
@@ -84,22 +96,10 @@ export default function Dashboard() {
     }
   }
 
-  // Calculate statistics
-  const totalQueries = queries.length
-  const blockedQueries = queries.filter(q => q.blocked).length
-  const allowedQueries = totalQueries - blockedQueries
-  const blockRate = totalQueries > 0 ? (blockedQueries / totalQueries) * 100 : 0
-  const totalEntries = blocklistStats ? blocklistStats.totalEntries : 0
-
-  const statsData = {
-    totalQueries,
-    blockedQueries,
-    allowedQueries,
-    blockRate,
-    totalEntries,
-  }
-
   // Chart data
+  const queriesInInterval = queries.length
+  const blockedQueries = queries.filter(q => q.blocked).length
+  const allowedQueries = queriesInInterval - blockedQueries
   const pieData = [
     { name: "Blocked", value: blockedQueries, color: "hsl(var(--destructive))" },
     { name: "Allowed", value: allowedQueries, color: "hsl(var(--success))" }
@@ -163,7 +163,13 @@ export default function Dashboard() {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6 space-y-6">
         {/* Statistics Cards */}
-        <StatsCards data={statsData} />
+        <StatsCards data={{
+          totalQueries: stats?.totalQueries || 0,
+          blockedQueries: stats?.blockedQueries || 0,
+          allowedQueries: stats?.allowedQueries || 0,
+          blockRate: stats?.blockRate || 0,
+          totalEntries: blocklistStats?.totalEntries || 0
+        }} />
 
         {/* Charts */}
         <QueryChart

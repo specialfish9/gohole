@@ -15,7 +15,7 @@ type Service interface {
 	GetStats(ctx context.Context, interval Interval) (*Stats, error)
 	GetHistory(ctx context.Context, interval Interval, granularity Granularity) ([]QueryHistoryPoint, error)
 	GetBlockListStats() (*BlockListStats, error)
-	GetHostStats(ctx context.Context) ([]database.HostStat, error)
+	GetHostStats(ctx context.Context, interival Interval) ([]database.HostStat, error)
 	ShouldAllow(name string) (bool, error)
 }
 
@@ -36,7 +36,7 @@ func (s *serviceImpl) Save(ctx context.Context, q database.Query) error {
 }
 
 func (s *serviceImpl) GetAll(ctx context.Context, limit int) ([]database.Query, error) {
-	return s.repo.FindAll(ctx)
+	return s.repo.FindAllLimit(ctx, limit)
 }
 
 func (s *serviceImpl) ShouldAllow(name string) (bool, error) {
@@ -130,6 +130,7 @@ func (s *serviceImpl) GetBlockListStats() (*BlockListStats, error) {
 	}, nil
 }
 
-func (s *serviceImpl) GetHostStats(ctx context.Context) ([]database.HostStat, error) {
-	return s.repo.FindHostStats(ctx)
+func (s *serviceImpl) GetHostStats(ctx context.Context, interval Interval) ([]database.HostStat, error) {
+	since := time.Now().UTC().Add(-interval.ToDuration())
+	return s.repo.FindHostStats(ctx, since)
 }

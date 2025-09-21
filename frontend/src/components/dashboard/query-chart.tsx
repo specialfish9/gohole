@@ -93,184 +93,189 @@ export function QueryChart({
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2">
-      <Card>
-        <CardHeader>
-          <CardTitle>Query Distribution</CardTitle>
-          <div className="text-sm text-muted-foreground">
-            Current period: {intervalOptions.find(opt => opt.value === interval)?.label}
-          </div>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={pieData}
-                cx="50%"
-                cy="50%"
-                innerRadius={60}
-                outerRadius={120}
-                paddingAngle={5}
-                dataKey="value"
-              >
-                {pieData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Queries Over Time</CardTitle>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="interval-select">Time Interval</Label>
-              <Select value={interval} onValueChange={onIntervalChange}>
-                <SelectTrigger id="interval-select">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {intervalOptions.map(option => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="granularity-select">Granularity</Label>
-              <Select value={granularity} onValueChange={onGranularityChange}>
-                <SelectTrigger id="granularity-select">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {granularityOptions.map(option => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={barData}>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-              <XAxis
-                dataKey="time"
-                className="text-xs fill-muted-foreground"
-                tick={{ fontSize: 12 }}
-              />
-              <YAxis
-                className="text-xs fill-muted-foreground"
-                tick={{ fontSize: 12 }}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Legend />
-              <Bar
-                dataKey="blocked"
-                name="Blocked"
-                fill="hsl(var(--destructive))"
-                radius={[2, 2, 0, 0]}
-              />
-              <Bar
-                dataKey="allowed"
-                name="Allowed"
-                fill="hsl(var(--success))"
-                radius={[2, 2, 0, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Hosts activity </CardTitle>
-          <div className="text-sm text-muted-foreground">
-            Current period: {intervalOptions.find(opt => opt.value === interval)?.label}
-          </div>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={hostPieData}
-                cx="50%"
-                cy="50%"
-                innerRadius={60}
-                outerRadius={120}
-                paddingAngle={5}
-                dataKey="value"
-              >
-                {hostData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={hostPieColors[index]} />
-                ))}
-              </Pie>
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Hosts stats</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Host</TableHead>
-                <TableHead>Queries</TableHead>
-                <TableHead>Blocked</TableHead>
-                <TableHead>Block rate</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {hostData.map((hostStat, index) => (
-                <TableRow key={index}>
-                  <TableCell className="font-mono text-sm max-w-[300px] truncate">
-                    {hostStat.host}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="font-mono">
-                      {hostStat.queryCount}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="font-mono">
-                      {hostStat.blockedCount}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      {true ? (
-                        <>
-                          <Shield className="h-4 w-4 text-destructive" />
-                          <Badge variant="destructive">{hostStat.blockRate}%</Badge>
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle className="h-4 w-4 text-success" />
-                          <Badge className="bg-success text-success-foreground">Allowed</Badge>
-                        </>
-                      )}
-                    </div>
-                  </TableCell>
-                </TableRow>
+    <div>
+      <div className="grid grid-cols-4 gap-4 mb-10">
+        <div className="space-y-2">
+          <Label htmlFor="interval-select">Time Interval</Label>
+          <Select value={interval} onValueChange={onIntervalChange}>
+            <SelectTrigger id="interval-select">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {intervalOptions.map(option => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
               ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="granularity-select">Granularity</Label>
+          <Select value={granularity} onValueChange={onGranularityChange}>
+            <SelectTrigger id="granularity-select">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {granularityOptions.map(option => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Query Distribution</CardTitle>
+            <div className="text-sm text-muted-foreground">
+              Current period: {intervalOptions.find(opt => opt.value === interval)?.label}
+            </div>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={pieData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={120}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {pieData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Queries Over Time</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={barData}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis
+                  dataKey="time"
+                  className="text-xs fill-muted-foreground"
+                  tick={{ fontSize: 12 }}
+                />
+                <YAxis
+                  className="text-xs fill-muted-foreground"
+                  tick={{ fontSize: 12 }}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend />
+                <Bar
+                  dataKey="blocked"
+                  name="Blocked"
+                  fill="hsl(var(--destructive))"
+                  radius={[2, 2, 0, 0]}
+                />
+                <Bar
+                  dataKey="allowed"
+                  name="Allowed"
+                  fill="hsl(var(--success))"
+                  radius={[2, 2, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Hosts activity </CardTitle>
+            <div className="text-sm text-muted-foreground">
+              Current period: {intervalOptions.find(opt => opt.value === interval)?.label}
+            </div>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={hostPieData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={120}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {hostData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={hostPieColors[index]} />
+                  ))}
+                </Pie>
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Hosts stats</CardTitle>
+            <div className="text-sm text-muted-foreground">
+              Current period: {intervalOptions.find(opt => opt.value === interval)?.label}
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Host</TableHead>
+                  <TableHead>Queries</TableHead>
+                  <TableHead>Blocked</TableHead>
+                  <TableHead>Block rate</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {hostData.map((hostStat, index) => (
+                  <TableRow key={index}>
+                    <TableCell className="font-mono text-sm max-w-[300px] truncate">
+                      {hostStat.host}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="font-mono">
+                        {hostStat.queryCount}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="font-mono">
+                        {hostStat.blockedCount}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        {true ? (
+                          <>
+                            <Shield className="h-4 w-4 text-destructive" />
+                            <Badge variant="destructive">{hostStat.blockRate}%</Badge>
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle className="h-4 w-4 text-success" />
+                            <Badge className="bg-success text-success-foreground">Allowed</Badge>
+                          </>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 }

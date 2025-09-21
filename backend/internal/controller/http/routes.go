@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"gohole/internal/query"
 	"net/http"
-
-	"github.com/go-chi/chi/v5"
 )
 
 type queryRouter struct {
@@ -35,8 +33,8 @@ func (qr *queryRouter) getAll(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (qr *queryRouter) getStats(w http.ResponseWriter, r *http.Request) error {
-	interval := query.Interval(chi.URLParam(r, "interval"))
-	if !interval.IsValid() {
+	interval := query.Interval(r.URL.Query().Get("interval"))
+	if interval != "" && !interval.IsValid() {
 		return fmt.Errorf("invalid interval value %s", interval)
 	}
 
@@ -97,7 +95,12 @@ func (qr *queryRouter) getBlockListStats(w http.ResponseWriter, r *http.Request)
 }
 
 func (qr *queryRouter) getHostStats(w http.ResponseWriter, r *http.Request) error {
-	stats, err := qr.queryService.GetHostStats(r.Context())
+	interval := query.Interval(r.URL.Query().Get("interval"))
+	if !interval.IsValid() {
+		return fmt.Errorf("invalid interval value \"%s\"", interval)
+	}
+
+	stats, err := qr.queryService.GetHostStats(r.Context(), interval)
 	if err != nil {
 		return err
 	}
