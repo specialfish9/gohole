@@ -159,6 +159,9 @@ export function QueryChart({
         <Card>
           <CardHeader>
             <CardTitle>Queries Over Time</CardTitle>
+            <div className="text-sm text-muted-foreground">
+              Current period: {intervalOptions.find(opt => opt.value === interval)?.label}
+            </div>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
