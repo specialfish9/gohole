@@ -6,6 +6,7 @@ import (
 	"gohole/internal/query"
 	"log/slog"
 	"strings"
+	"time"
 
 	"codeberg.org/miekg/dns"
 )
@@ -17,6 +18,7 @@ type handler struct {
 
 // handleRequest forwards DNS queries to the upstream server
 func (d *handler) handleRequest(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) {
+	startTime := time.Now()
 	c := new(dns.Client)
 
 	// Filter queries
@@ -29,7 +31,6 @@ func (d *handler) handleRequest(ctx context.Context, w dns.ResponseWriter, r *dn
 		if err != nil {
 			slog.Error("Filtering", "error", err.Error())
 		}
-		slog.Info("SMASH "+name, "host", host)
 		m := new(dns.Msg)
 		m.Rcode = dns.RcodeRefused
 		m.ID = r.ID
@@ -39,16 +40,17 @@ func (d *handler) handleRequest(ctx context.Context, w dns.ResponseWriter, r *dn
 			slog.Error("Failed to write refusal response", "error", err.Error())
 		}
 
+		millis := time.Since(startTime).Milliseconds()
+		slog.Info("SMASH "+name, "host", host, "durationMS", millis)
+
 		// Save query as blocked
-		q := database.NewQuery(name, question.Header().Class, host, true)
+		q := database.NewQuery(name, question.Header().Class, host, true, millis)
 		if err := d.queryService.Save(ctx, q); err != nil {
 			slog.Error("saving blocked query: " + err.Error())
 		}
 
 		return
 	}
-
-	slog.Info("PASS "+name, "host", host)
 
 	resp, _, err := c.Exchange(ctx, r, "udp", d.upstream)
 	if err != nil {
@@ -61,8 +63,11 @@ func (d *handler) handleRequest(ctx context.Context, w dns.ResponseWriter, r *dn
 		slog.Error("failed to write response", "error", err)
 	}
 
+	millis := time.Since(startTime).Milliseconds()
+	slog.Info("PASS "+name, "host", host, "durationMS", millis)
+
 	// Save query
-	q := database.NewQuery(name, question.Header().Class, host, false)
+	q := database.NewQuery(name, question.Header().Class, host, false, millis)
 	if err := d.queryService.Save(ctx, q); err != nil {
 		slog.Error("saving passed query", "error", err)
 	}

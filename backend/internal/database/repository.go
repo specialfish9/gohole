@@ -31,8 +31,8 @@ func NewRepository(conn driver.Conn) Repository {
 
 func (r *repositoryImpl) SaveQuery(ctx context.Context, q Query) error {
 	err := r.conn.Exec(ctx, `
-    INSERT INTO query (name, type, blocked, host, timestamp)
-    VALUES (?, ?, ?, ?, ?)
+    INSERT INTO query (name, type, blocked, host, timestamp, millis)
+    VALUES (?, ?, ?, ?, ?, ?)
     `,
 		q.Name,
 		uint16(0), // TODO
@@ -40,6 +40,7 @@ func (r *repositoryImpl) SaveQuery(ctx context.Context, q Query) error {
 		q.Host,
 		time.Unix(q.Timestamp, 0), // Convert int64 to time.Time
 		q.Timestamp,
+		q.Millis,
 	)
 
 	if err != nil {
@@ -55,7 +56,7 @@ func (r *repositoryImpl) FindAll(ctx context.Context) ([]Query, error) {
 
 func (r *repositoryImpl) FindAllLimit(ctx context.Context, limit int) ([]Query, error) {
 	baseQuery := `
-		SELECT name, type, host, blocked, timestamp
+		SELECT name, type, host, blocked, timestamp, millis
 		FROM query
 		ORDER BY timestamp DESC
   `
@@ -78,7 +79,7 @@ func (r *repositoryImpl) FindAllLimit(ctx context.Context, limit int) ([]Query, 
 		var q Query
 		var blockedUInt8 uint8
 
-		err := rows.Scan(&q.Name, &q.Type, &q.Host, &blockedUInt8, &q.Timestamp)
+		err := rows.Scan(&q.Name, &q.Type, &q.Host, &blockedUInt8, &q.Timestamp, &q.Millis)
 		if err != nil {
 			slog.Error("scan failed", "error", err)
 			continue

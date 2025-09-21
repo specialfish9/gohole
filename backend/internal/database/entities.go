@@ -8,15 +8,17 @@ type Query struct {
 	Blocked   bool   `json:"blocked"`
 	Host      string `json:"host"`
 	Timestamp int64  `json:"timestamp"`
+	Millis    int64  `json:"millis"`
 }
 
-func NewQuery(name string, qtype uint16, host string, blocked bool) Query {
+func NewQuery(name string, qtype uint16, host string, blocked bool, millis int64) Query {
 	return Query{
 		Name:      name,
 		Type:      qtype,
 		Blocked:   blocked,
 		Host:      host,
 		Timestamp: time.Now().UTC().Unix(),
+		Millis:    millis,
 	}
 }
 

@@ -105,6 +105,7 @@ type Query struct {
 	Blocked   bool   `json:"blocked"`
 	Host      string `json:"host"`
 	Timestamp string `json:"timestamp"`
+	Millis    int64  `json:"millis"`
 }
 
 func QueryFromDB(q database.Query) Query {
@@ -114,5 +115,6 @@ func QueryFromDB(q database.Query) Query {
 		Blocked:   q.Blocked,
 		Host:      q.Host,
 		Timestamp: time.Unix(q.Timestamp, 0).UTC().Format(time.RFC3339),
+		Millis:    q.Millis,
 	}
 }

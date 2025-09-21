@@ -4,6 +4,7 @@ interface Query {
   host: string
   blocked: boolean
   timestamp?: string
+  millis: number
 }
 
 interface QueryStats {

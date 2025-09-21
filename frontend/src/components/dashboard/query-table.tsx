@@ -2,14 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Shield, CheckCircle } from "lucide-react"
-
-interface Query {
-  name: string
-  type: string
-  blocked: boolean
-  host: string
-  timestamp?: string
-}
+import { Query } from "@/lib/api"
 
 interface QueryTableProps {
   queries: Query[]
@@ -26,6 +19,7 @@ export function QueryTable({ queries }: QueryTableProps) {
           <TableHeader>
             <TableRow>
               <TableHead>Domain</TableHead>
+              <TableHead>ms</TableHead>
               <TableHead>Host</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Status</TableHead>
@@ -37,6 +31,9 @@ export function QueryTable({ queries }: QueryTableProps) {
               <TableRow key={index}>
                 <TableCell className="font-mono text-sm max-w-[300px] truncate">
                   {query.name}
+                </TableCell>
+                <TableCell className="font-mono text-sm max-w-[300px] truncate">
+                  {query.millis}
                 </TableCell>
                 <TableCell>
                   <Badge variant="outline" className="font-mono">

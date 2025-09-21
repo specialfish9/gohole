@@ -44,6 +44,7 @@ func Init(ctx context.Context, conn driver.Conn) error {
 			blocked UInt8,
 			host String,
 			timestamp DateTime,
+			millis UInt64,
 		) ENGINE = MergeTree() 
 			ORDER BY (timestamp, type);
 		`,
