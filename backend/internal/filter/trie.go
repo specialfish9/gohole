@@ -46,5 +46,5 @@ func (n *TrieNode) contains(s string) (bool, error) {
 		return false, nil
 	}
 
-	return child.Contains(s[1:])
+	return child.contains(s[1:])
 }

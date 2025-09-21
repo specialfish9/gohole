@@ -15,9 +15,6 @@ type TrieFilter struct {
 }
 
 func (f *TrieFilter) Filter(q string) (bool, error) {
-	if q[len(q)-1] == '.' {
-		q = q[:len(q)-1]
-	}
 	found, err := f.root.Contains(q)
 	if err != nil {
 		return false, err

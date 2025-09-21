@@ -40,6 +40,9 @@ func (s *serviceImpl) GetAll(ctx context.Context, limit int) ([]database.Query, 
 }
 
 func (s *serviceImpl) ShouldAllow(name string) (bool, error) {
+	if name[len(name)-1] == '.' {
+		name = name[:len(name)-1]
+	}
 	return s.filter.Filter(name)
 }
 
