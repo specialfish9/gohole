@@ -40,6 +40,7 @@ func Start(wg *sync.WaitGroup, reg *registry.Registry, address string, serverFro
 	r.Get("/api/queries/stats", errorHandler(qr.getStats))
 	r.Get("/api/queries/stats/history", errorHandler(qr.getStatsHistory))
 	r.Get("/api/hosts/stats", errorHandler(qr.getHostStats))
+	r.Get("/api/domains/stats", errorHandler(qr.getDomainStats))
 
 	r.Get("/api/blocklist/stats", errorHandler(qr.getBlockListStats))
 

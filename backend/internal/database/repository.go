@@ -17,6 +17,8 @@ type Repository interface {
 	// after the specified `since`.
 	FindAllByInterval(ctx context.Context, since time.Time) ([]Query, error)
 	FindHostStats(ctx context.Context, since time.Time) ([]HostStat, error)
+	FindDomainStats(ctx context.Context, since time.Time) (DomainStats, error)
+	FindTopDomains(ctx context.Context, blocked bool, since time.Time, limit int) ([]TopDomain, error)
 }
 
 type repositoryImpl struct {
@@ -151,4 +153,60 @@ func (r *repositoryImpl) FindHostStats(ctx context.Context, since time.Time) ([]
 	}
 
 	return stats, nil
+}
+
+func (r *repositoryImpl) FindDomainStats(ctx context.Context, since time.Time) (DomainStats, error) {
+	var stats DomainStats
+
+	rows, err := r.conn.Query(ctx, `
+		SELECT
+    countDistinctIf(name, blocked = true)  AS blocked_count,
+    countDistinct(name) AS total
+		FROM query
+		WHERE timestamp >= ?
+	`, since)
+	if err != nil {
+		return stats, fmt.Errorf("repository: cannot fetch domain stats: %w", err)
+	}
+	defer rows.Close()
+
+	if rows.Next() {
+		if err := rows.Scan(&stats.BlockedCount, &stats.Total); err != nil {
+			return stats, fmt.Errorf("repository: cannot scan domain stats: %w", err)
+		}
+	} else {
+		return stats, fmt.Errorf("repository: no domain stats found")
+	}
+
+	return stats, nil
+}
+
+func (r *repositoryImpl) FindTopDomains(ctx context.Context, blocked bool, since time.Time, limit int) ([]TopDomain, error) {
+	rows, err := r.conn.Query(ctx, `
+		SELECT
+			name AS domain,
+			COUNT(*) AS blockedCount
+		FROM query
+		WHERE blocked = ? AND timestamp >= ?
+		GROUP BY name
+		ORDER BY blockedCount DESC
+		LIMIT ?
+	`, blocked, since, limit)
+	if err != nil {
+		return nil, fmt.Errorf("repository: cannot fetch top blocked domains: %w", err)
+	}
+	defer rows.Close()
+
+	var domains []TopDomain
+
+	for rows.Next() {
+		var td TopDomain
+		if err := rows.Scan(&td.Domain, &td.Count); err != nil {
+			slog.Error("scan failed", "error", err)
+			continue
+		}
+		domains = append(domains, td)
+	}
+
+	return domains, nil
 }

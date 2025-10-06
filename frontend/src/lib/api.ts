@@ -31,6 +31,13 @@ interface HostStat {
   blockRate: number
 }
 
+interface DomainStats {
+  total: number
+  blocked: number
+  topBlocked: { domain: string; count: number }[]
+  topAllowed: { domain: string; count: number }[]
+}
+
 class GoHoleAPI {
   private baseURL: string
 
@@ -111,6 +118,19 @@ class GoHoleAPI {
       return await response.json()
     } catch (error) {
       console.error('Failed to fetch host stats:', error)
+      throw error
+    }
+  }
+
+  async getDomainStats(interval: string = '24h'): Promise<DomainStats> {
+    try {
+      const response = await fetch(`${this.baseURL}/api/domains/stats?interval=${interval}`)
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      return await response.json()
+    } catch (error) {
+      console.error('Failed to fetch domain stats:', error)
       throw error
     }
   }
@@ -238,4 +258,4 @@ class GoHoleAPI {
 // Export singleton instance
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || window.location.origin;
 export const goholeAPI = new GoHoleAPI(API_BASE_URL)
-export type { Query, QueryStats, QueryHistoryPoint, BlocklistStats, HostStat }
+export type { Query, QueryStats, QueryHistoryPoint, BlocklistStats, HostStat, DomainStats }

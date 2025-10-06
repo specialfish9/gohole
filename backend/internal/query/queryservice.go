@@ -16,6 +16,7 @@ type Service interface {
 	GetHistory(ctx context.Context, interval Interval, granularity Granularity) ([]QueryHistoryPoint, error)
 	GetBlockListStats() (*BlockListStats, error)
 	GetHostStats(ctx context.Context, interival Interval) ([]database.HostStat, error)
+	GetDomainStats(ctx context.Context, interval Interval) (DomainStats, error)
 	ShouldAllow(name string) (bool, error)
 }
 
@@ -133,4 +134,32 @@ func (s *serviceImpl) GetBlockListStats() (*BlockListStats, error) {
 func (s *serviceImpl) GetHostStats(ctx context.Context, interval Interval) ([]database.HostStat, error) {
 	since := time.Now().UTC().Add(-interval.ToDuration())
 	return s.repo.FindHostStats(ctx, since)
+}
+
+func (s *serviceImpl) GetDomainStats(ctx context.Context, interval Interval) (DomainStats, error) {
+	since := time.Now().UTC().Add(-interval.ToDuration())
+	ds, err := s.repo.FindDomainStats(ctx, since)
+	if err != nil {
+		return DomainStats{}, fmt.Errorf("query service: cannot fetch domain stats: %w", err)
+	}
+
+	// Fetch top blocked domains
+	blocked, err := s.repo.FindTopDomains(ctx, true, since, 10)
+	if err != nil {
+		return DomainStats{}, fmt.Errorf("query service: cannot fetch top blocked domains: %w", err)
+	}
+
+	// Fetch top allowed domains
+	allowed, err := s.repo.FindTopDomains(ctx, false, since, 10)
+	if err != nil {
+		return DomainStats{}, fmt.Errorf("query service: cannot fetch top allowed domains: %w", err)
+	}
+
+	var ret DomainStats
+	ret.Total = ds.Total
+	ret.Blocked = ds.BlockedCount
+	ret.TopBlocked = blocked
+	ret.TopAllowed = allowed
+
+	return ret, nil
 }

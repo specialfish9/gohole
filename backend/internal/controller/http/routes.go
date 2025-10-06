@@ -114,3 +114,24 @@ func (qr *queryRouter) getHostStats(w http.ResponseWriter, r *http.Request) erro
 
 	return nil
 }
+
+func (qr *queryRouter) getDomainStats(w http.ResponseWriter, r *http.Request) error {
+	interval := query.Interval(r.URL.Query().Get("interval"))
+	if !interval.IsValid() {
+		return fmt.Errorf("invalid interval value \"%s\"", interval)
+	}
+
+	stats, err := qr.queryService.GetDomainStats(r.Context(), interval)
+	if err != nil {
+		return err
+	}
+
+	b, err := json.Marshal(&stats)
+	if err != nil {
+		return err
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Write(b)
+
+	return nil
+}

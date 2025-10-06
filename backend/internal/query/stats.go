@@ -118,3 +118,10 @@ func QueryFromDB(q database.Query) Query {
 		Millis:    q.Millis,
 	}
 }
+
+type DomainStats struct {
+	Total      uint64               `json:"total"`
+	Blocked    uint64               `json:"blocked"`
+	TopBlocked []database.TopDomain `json:"topBlocked"`
+	TopAllowed []database.TopDomain `json:"topAllowed"`
+}

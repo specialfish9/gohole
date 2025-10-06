@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { goholeAPI, type Query, type BlocklistStats, type HostStat, QueryStats } from "@/lib/api"
+import { goholeAPI, type Query, type BlocklistStats, type HostStat, QueryStats, DomainStats } from "@/lib/api"
 import { StatsCards } from "@/components/dashboard/stats-cards"
 import { QueryChart } from "@/components/dashboard/query-chart"
 import { QueryTable } from "@/components/dashboard/query-table"
@@ -17,6 +17,7 @@ export default function Dashboard() {
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
   const [blocklistStats, setBlocklistStats] = useState<BlocklistStats>()
   const [hostStats, setHostStats] = useState<HostStat[]>([])
+  const [domainStats, setDomainStats] = useState<DomainStats>()
   const { toast } = useToast()
 
   const fetchQueries = async () => {
@@ -70,12 +71,22 @@ export default function Dashboard() {
     }
   }
 
+  const fetchDomainStats = async () => {
+    try {
+      const dstats = await goholeAPI.getDomainStats(timeInterval)
+      setDomainStats(dstats)
+    } catch (error) {
+      console.error('Failed to fetch domain stats:', error)
+    }
+  }
+
   // Auto-refresh queries every 30 seconds
   useEffect(() => {
     fetchStats()
     fetchQueries()
     fetchBlocklistStats()
     fetchHostStats()
+    fetchDomainStats()
 
     const refreshInterval = setInterval(fetchQueries, 30000)
     return () => clearInterval(refreshInterval)
@@ -85,6 +96,7 @@ export default function Dashboard() {
   useEffect(() => {
     fetchChartData()
     fetchHostStats()
+    fetchStats()
   }, [timeInterval, granularity])
 
   const fetchChartData = async () => {
@@ -148,12 +160,6 @@ export default function Dashboard() {
               >
                 <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               </Button>
-              <Button variant="outline" size="icon">
-                <Upload className="h-4 w-4" />
-              </Button>
-              <Button variant="outline" size="icon">
-                <Settings className="h-4 w-4" />
-              </Button>
               <ThemeToggle />
             </div>
           </div>
@@ -178,6 +184,7 @@ export default function Dashboard() {
           hostData={hostStats}
           interval={timeInterval}
           granularity={granularity}
+          domainStats={domainStats}
           onIntervalChange={setTimeInterval}
           onGranularityChange={setGranularity}
         />

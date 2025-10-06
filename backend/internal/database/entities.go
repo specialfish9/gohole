@@ -28,3 +28,13 @@ type HostStat struct {
 	BlockedCount uint64  `json:"blockedCount"`
 	BlockRate    float64 `json:"blockRate"`
 }
+
+type DomainStats struct {
+	Total        uint64 `json:"total"`
+	BlockedCount uint64 `json:"blocked"`
+}
+
+type TopDomain struct {
+	Domain string `json:"domain"`
+	Count  uint64 `json:"count"`
+}
