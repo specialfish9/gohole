@@ -15,13 +15,14 @@ import (
 )
 
 const defaultConfigPath = "./gohole.conf"
+const panicFilePath = "./panic.log"
 
 // logPanic logs the panic message to both slog and a file, then exits the program.
 func logPanic(v any) {
 	msg := fmt.Sprintf("panic: %v", v)
 	slog.Error(msg)
 
-	f, err := os.OpenFile("panic.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(panicFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		slog.Error("Could not open panic.log:", err)
 	} else {
