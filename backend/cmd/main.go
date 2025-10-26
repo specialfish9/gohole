@@ -12,10 +12,14 @@ import (
 	"log/slog"
 	"os"
 	"sync"
+	"time"
+
+	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 )
 
 const defaultConfigPath = "./gohole.conf"
 const panicFilePath = "./panic.log"
+const dbConnectionAttempts = 10
 
 // logPanic logs the panic message to both slog and a file, then exits the program.
 func logPanic(v any) {
@@ -34,6 +38,30 @@ func logPanic(v any) {
 
 	fmt.Println("Bye :O")
 	os.Exit(1)
+}
+
+func connectToDB(cfg *config.Config) (driver.Conn, error) {
+	var dbConn driver.Conn
+	var err error
+
+	for i := 0; i < dbConnectionAttempts; i++ {
+		dbConn, err = database.Connect(
+			cfg.DBAddress,
+			cfg.DBName,
+			cfg.DBUser,
+			cfg.DBPassword,
+			false,
+		)
+
+		if err != nil {
+			slog.Error(fmt.Sprintf("DB connection attempt %d failed: %v", i+1, err))
+			time.Sleep(2 * time.Second)
+		} else {
+			return dbConn, nil
+		}
+	}
+
+	return nil, fmt.Errorf("failed to connect to DB after %d attempts: %w", dbConnectionAttempts, err)
 }
 
 func main() {
@@ -57,13 +85,7 @@ func main() {
 	// TODO handle log level from config
 	slog.SetLogLoggerLevel(slog.LevelDebug)
 
-	dbConn, err := database.Connect(
-		cfg.DBAddress,
-		cfg.DBName,
-		cfg.DBUser,
-		cfg.DBPassword,
-		false,
-	)
+	dbConn, err := connectToDB(cfg)
 	if err != nil {
 		logPanic(err.Error())
 	}
@@ -71,7 +93,7 @@ func main() {
 	slog.Info("Connected to DB")
 
 	if err := database.Init(context.Background(), dbConn); err != nil {
-		logPanic(err.Error())
+		slog.Error(err.Error())
 	}
 
 	slog.Info("created tables")
