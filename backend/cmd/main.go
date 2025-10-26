@@ -16,20 +16,26 @@ import (
 
 const defaultConfigPath = "./gohole.conf"
 
+// logPanic logs the panic message to both slog and a file, then exits the program.
 func logPanic(v any) {
-	slog.Error(fmt.Sprintf("%v", v))
+	msg := fmt.Sprintf("panic: %v", v)
+	slog.Error(msg)
+
+	f, err := os.OpenFile("panic.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		slog.Error("Could not open panic.log:", err)
+	} else {
+		defer f.Close()
+		if _, err := f.Write([]byte(msg + "\n")); err != nil {
+			slog.Error("Could not write to panic.log:", err)
+		}
+	}
+
 	fmt.Println("Bye :O")
 	os.Exit(1)
 }
 
 func main() {
-	// f, err := os.OpenFile("log.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	// if err != nil {
-	// 	logPanic(err.Error())
-	// }
-	// defer f.Close()
-	// slog.SetDefault(slog.New(slog.NewTextHandler(f, &slog.HandlerOptions{AddSource: true})))
-
 	fmt.Println("========")
 	fmt.Println(" GOHOLE ")
 	fmt.Println("========")
