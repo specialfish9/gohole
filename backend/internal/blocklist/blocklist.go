@@ -11,9 +11,9 @@ import (
 	"strings"
 )
 
-// ReadFromFile reads a file containing URLs of blocklists, downloads them, and
+// LoadRemote reads a file containing URLs of blocklists, downloads them, and
 // returns a list of domains.
-func ReadFromFile(fileName string) ([]string, error) {
+func LoadRemote(fileName string) ([]string, error) {
 	file, err := os.Open(fileName)
 	if err != nil {
 		return nil, fmt.Errorf("blocklist: opening blocklist file: %w", err)
@@ -45,12 +45,14 @@ func ReadFromFile(fileName string) ([]string, error) {
 
 		slog.Info("Loading blocklist entry", "entry", line)
 
-		urls, err := download(line)
+		blockList, err := download(line)
 		if err != nil {
 			slog.Error("Downloading blocklist", "blocklist", line, "error", err)
 		} else {
 			dones++
 		}
+
+		urls := parseBlockList(blockList)
 
 		domains = append(domains, urls...)
 	}
@@ -60,29 +62,51 @@ func ReadFromFile(fileName string) ([]string, error) {
 	return domains, nil
 }
 
-func download(url string) ([]string, error) {
+func LoadLocalFile(fileName string) ([]string, error) {
+	f, err := os.Open(fileName)
+	if err != nil {
+		return nil, fmt.Errorf("blocklist: opening local blocklist file: %w", err)
+	}
+
+	defer f.Close()
+
+	content, err := io.ReadAll(f)
+	if err != nil {
+		return nil, fmt.Errorf("blocklist: reading local blocklist file: %w", err)
+	}
+
+	domains := parseBlockList(string(content))
+	return domains, nil
+}
+
+func download(url string) (string, error) {
 	resp, err := http.Get(url)
 	if err != nil {
-		return nil, fmt.Errorf("blocklist: downloading blocklist: %w", err)
+		return "", fmt.Errorf("blocklist: downloading blocklist: %w", err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("blocklist: downloading blocklist: status code %d", resp.StatusCode)
+		return "", fmt.Errorf("blocklist: downloading blocklist: status code %d", resp.StatusCode)
 	}
 
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("blocklist: reading blocklist: %w", err)
+		return "", fmt.Errorf("blocklist: reading blocklist: %w", err)
 	}
 
-	split := strings.Split(string(body), "\n")
-	var result []string
+	return string(body), nil
+}
 
-	for _, line := range split {
+func parseBlockList(data string) []string {
+	lines := strings.Split(data, "\n")
+	var domains []string
+
+	for _, line := range lines {
 		line = strings.TrimSpace(line)
 
+		// Skip comments and empty lines
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue
 		}
@@ -95,9 +119,9 @@ func download(url string) ([]string, error) {
 				continue
 			}
 
-			result = append(result, part)
+			domains = append(domains, part)
 		}
 	}
 
-	return result, nil
+	return domains
 }

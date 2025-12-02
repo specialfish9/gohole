@@ -98,9 +98,17 @@ func main() {
 
 	slog.Info("created tables")
 
-	domains, err := blocklist.ReadFromFile(cfg.BlocklistFile)
+	domains, err := blocklist.LoadRemote(cfg.BlocklistFile)
 	if err != nil {
 		logPanic(err.Error())
+	}
+
+	if cfg.LocalBlockList != "" {
+		localDomains, err := blocklist.LoadLocalFile(cfg.LocalBlockList)
+		if err != nil {
+			logPanic(err.Error())
+		}
+		domains = append(domains, localDomains...)
 	}
 
 	reg := registry.NewRegistry(domains, dbConn)

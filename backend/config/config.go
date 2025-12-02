@@ -8,16 +8,17 @@ import (
 )
 
 type Config struct {
-	Upstream      string `confuso:"upstream" validate:"required"`
-	DNSAddress    string `confuso:"dns_address" validate:"required"`
-	HTTPAddress   string `confuso:"http_address" validate:"required"`
-	DBAddress     string `confuso:"db_address" validate:"required"`
-	DBUser        string `confuso:"db_user" validate:"required"`
-	DBPassword    string `confuso:"db_password" validate:"required"`
-	DBName        string `confuso:"db_name" validate:"required"`
-	BlocklistFile string `confuso:"blocklist_file" validate:"required"`
-	LogLevel      string `confuso:"log_level" validate:"required"`
-	ServeFrontend bool   `confuso:"serve_frontend"`
+	Upstream       string `confuso:"upstream" validate:"required"`
+	DNSAddress     string `confuso:"dns_address" validate:"required"`
+	HTTPAddress    string `confuso:"http_address" validate:"required"`
+	DBAddress      string `confuso:"db_address" validate:"required"`
+	DBUser         string `confuso:"db_user" validate:"required"`
+	DBPassword     string `confuso:"db_password" validate:"required"`
+	DBName         string `confuso:"db_name" validate:"required"`
+	BlocklistFile  string `confuso:"blocklist_file" validate:"required"`
+	LogLevel       string `confuso:"log_level" validate:"required"`
+	ServeFrontend  bool   `confuso:"serve_frontend"`
+	LocalBlockList string `confuso:"local_blocklist"`
 }
 
 func New(fileName string) (*Config, error) {
