@@ -29,7 +29,7 @@ func (d *handler) handleRequest(ctx context.Context, w dns.ResponseWriter, r *dn
 	allow, err := d.queryService.ShouldAllow(name)
 	if err != nil || !allow {
 		if err != nil {
-			slog.Error("Filtering", "error", err.Error())
+			slog.Error("Filtering", "name", name, "error", err.Error())
 		}
 		m := new(dns.Msg)
 		m.Rcode = dns.RcodeRefused
@@ -37,16 +37,16 @@ func (d *handler) handleRequest(ctx context.Context, w dns.ResponseWriter, r *dn
 
 		_, err := m.WriteTo(w)
 		if err != nil {
-			slog.Error("Failed to write refusal response", "error", err.Error())
+			slog.Error("Failed to write refusal response", "name", name, "error", err.Error())
 		}
 
 		millis := time.Since(startTime).Milliseconds()
-		slog.Info("SMASH "+name, "host", host, "durationMS", millis)
+		slog.Info("SMASH", "name", name, "host", host, "durationMS", millis)
 
 		// Save query as blocked
 		q := database.NewQuery(name, question.Header().Class, host, true, millis)
 		if err := d.queryService.Save(ctx, q); err != nil {
-			slog.Error("saving blocked query: " + err.Error())
+			slog.Error("Error saving blocked query", "name", name, "error", err.Error())
 		}
 
 		return
@@ -54,21 +54,21 @@ func (d *handler) handleRequest(ctx context.Context, w dns.ResponseWriter, r *dn
 
 	resp, _, err := c.Exchange(ctx, r, "udp", d.upstream)
 	if err != nil {
-		slog.Error("failed to query upstream", "error", err)
+		slog.Error("Failed to query upstream", "name", name, "error", err)
 		return
 	}
 
 	_, err = resp.WriteTo(w)
 	if err != nil {
-		slog.Error("failed to write response", "error", err)
+		slog.Error("Failed to write response", "name", name, "error", err)
 	}
 
 	millis := time.Since(startTime).Milliseconds()
-	slog.Info("PASS "+name, "host", host, "durationMS", millis)
+	slog.Info("PASS", "name", name, "host", host, "durationMS", millis)
 
 	// Save query
 	q := database.NewQuery(name, question.Header().Class, host, false, millis)
 	if err := d.queryService.Save(ctx, q); err != nil {
-		slog.Error("saving passed query", "error", err)
+		slog.Error("Error when saving passed query", "name", name, "error", err)
 	}
 }
