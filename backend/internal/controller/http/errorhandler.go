@@ -25,9 +25,9 @@ func newHTTPErr(status int, format string, args ...any) *HTTPError {
 }
 
 func isHTTPError(err error) (bool, *HTTPError) {
-	var httpErr HTTPError
+	httpErr := &HTTPError{}
 	if ok := errors.As(err, &httpErr); ok {
-		return true, &httpErr
+		return true, httpErr
 	}
 	return false, nil
 }

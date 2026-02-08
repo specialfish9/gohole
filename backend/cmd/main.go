@@ -28,11 +28,11 @@ func logPanic(v any) {
 
 	f, err := os.OpenFile(panicFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		slog.Error("Could not open panic.log:", err)
+		slog.Error("Could not open panic.log:" + err.Error())
 	} else {
 		defer f.Close()
 		if _, err := f.Write([]byte(msg + "\n")); err != nil {
-			slog.Error("Could not write to panic.log:", err)
+			slog.Error("Could not write to panic.log:" + err.Error())
 		}
 	}
 
@@ -119,7 +119,7 @@ func main() {
 		}
 	}
 
-	reg := registry.NewRegistry(domains, allowDomains, dbConn)
+	reg := registry.NewRegistry(domains, allowDomains, cfg.FilterStrategy, dbConn)
 
 	wg := sync.WaitGroup{}
 

@@ -13,9 +13,9 @@ type Registry struct {
 	QueryService    query.Service
 }
 
-func NewRegistry(blockedDomains []string, allowedDomains []string, conn driver.Conn) *Registry {
-	blockFilter := filter.NewTrie(blockedDomains)
-	allowFilter := filter.NewTrie(allowedDomains)
+func NewRegistry(blockedDomains []string, allowedDomains []string, filterStrategy filter.Strategy, conn driver.Conn) *Registry {
+	blockFilter := filter.NewFilter(filterStrategy, blockedDomains)
+	allowFilter := filter.NewFilter(filterStrategy, allowedDomains)
 
 	repo := database.NewRepository(conn)
 

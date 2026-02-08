@@ -2,12 +2,34 @@ package filter
 
 import "log/slog"
 
+type Strategy string
+
+const (
+	BasicStrategy Strategy = "basic"
+	TrieStrategy  Strategy = "trie"
+	Trie2Strategy Strategy = "trie2"
+)
+
 type Filter interface {
 	// Filter returns true if the filter contains the query, false otherwise.
 	// An error is returned if there was an issue checking the filter.
 	Filter(q string) (bool, error)
 	// Size returns the number of entries in the filter
 	Size() int
+}
+
+func NewFilter(strategy Strategy, domains []string) Filter {
+	switch strategy {
+	case BasicStrategy:
+		return NewBasic(domains)
+	case TrieStrategy:
+		return NewTrie(domains)
+	case Trie2Strategy:
+		return NewTrie2(domains)
+	default:
+		slog.Warn("unknown filter strategy, defaulting to basic", "strategy", strategy)
+		return NewBasic(domains)
+	}
 }
 
 type TrieFilter struct {

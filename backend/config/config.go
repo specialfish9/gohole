@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"gohole/internal/filter"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/specialfish9/confuso"
@@ -12,6 +13,8 @@ type Config struct {
 	Upstream string `confuso:"upstream" validate:"required"`
 	// DNSAddress is the address on which the DNS server will listen for incoming queries.
 	DNSAddress string `confuso:"dns_address" validate:"required"`
+	// FilterStrategy is the strategy used to filter domains (e.g., "basic", "trie2").
+	FilterStrategy filter.Strategy `confuso:"filter_strategy" validate:"required,oneof=basic trie trie2"`
 	// HTTPAddress is the address on which the HTTP server will listen for incoming requests.
 	HTTPAddress string `confuso:"http_address" validate:"required"`
 	// ServeFrontend indicates whether to serve the frontend or not.
