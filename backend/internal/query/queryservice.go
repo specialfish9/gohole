@@ -21,14 +21,16 @@ type Service interface {
 }
 
 type serviceImpl struct {
-	repo   database.Repository
-	filter filter.Filter
+	repo        database.Repository
+	blockFilter filter.Filter
+	allowFilter filter.Filter
 }
 
-func NewService(filter filter.Filter, repo database.Repository) Service {
+func NewService(blockFilter filter.Filter, allowFilter filter.Filter, repo database.Repository) Service {
 	return &serviceImpl{
-		filter: filter,
-		repo:   repo,
+		blockFilter: blockFilter,
+		allowFilter: allowFilter,
+		repo:        repo,
 	}
 }
 
@@ -40,11 +42,28 @@ func (s *serviceImpl) GetAll(ctx context.Context, limit int) ([]database.Query, 
 	return s.repo.FindAllLimit(ctx, limit)
 }
 
+// ShouldAllow checks if a query should be allowed or blocked based on the allow and block filters.
+// It returns true if the query should be allowed, false if it should be blocked.
 func (s *serviceImpl) ShouldAllow(name string) (bool, error) {
 	if name[len(name)-1] == '.' {
 		name = name[:len(name)-1]
 	}
-	return s.filter.Filter(name)
+
+	isAllowed, err := s.allowFilter.Filter(name)
+	if err != nil {
+		return false, fmt.Errorf("query service: error checking allow filter: %w", err)
+	}
+
+	if isAllowed {
+		return true, nil
+	}
+
+	isBlocked, err := s.blockFilter.Filter(name)
+	if err != nil {
+		return false, fmt.Errorf("query service: error checking block filter: %w", err)
+	}
+
+	return !isBlocked, nil
 }
 
 func (s *serviceImpl) GetStats(ctx context.Context, interval Interval) (*Stats, error) {
@@ -127,7 +146,7 @@ func (s *serviceImpl) GetHistory(ctx context.Context, interval Interval, granula
 
 func (s *serviceImpl) GetBlockListStats() (*BlockListStats, error) {
 	return &BlockListStats{
-		TotalEntries: s.filter.Size(),
+		TotalEntries: s.blockFilter.Size(),
 	}, nil
 }
 

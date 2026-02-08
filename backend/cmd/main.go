@@ -111,7 +111,15 @@ func main() {
 		domains = append(domains, localDomains...)
 	}
 
-	reg := registry.NewRegistry(domains, dbConn)
+	var allowDomains []string
+	if cfg.LocalAllowList != "" {
+		allowDomains, err = blocklist.LoadLocalFile(cfg.LocalAllowList)
+		if err != nil {
+			logPanic(err.Error())
+		}
+	}
+
+	reg := registry.NewRegistry(domains, allowDomains, dbConn)
 
 	wg := sync.WaitGroup{}
 

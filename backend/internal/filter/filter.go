@@ -3,7 +3,8 @@ package filter
 import "log/slog"
 
 type Filter interface {
-	// Filter rturns true to allow the query, false to block it
+	// Filter returns true if the filter contains the query, false otherwise.
+	// An error is returned if there was an issue checking the filter.
 	Filter(q string) (bool, error)
 	// Size returns the number of entries in the filter
 	Size() int
@@ -14,16 +15,7 @@ type TrieFilter struct {
 	size int
 }
 
-func (f *TrieFilter) Filter(q string) (bool, error) {
-	found, err := f.root.Contains(q)
-	if err != nil {
-		return false, err
-	}
-
-	return !found, nil
-}
-
-func Trie(domains []string) Filter {
+func NewTrie(domains []string) Filter {
 	root := NewTrieNode()
 
 	addedDomains := 0
@@ -40,6 +32,15 @@ func Trie(domains []string) Filter {
 		root: root,
 		size: addedDomains,
 	}
+}
+
+func (f *TrieFilter) Filter(q string) (bool, error) {
+	found, err := f.root.Contains(q)
+	if err != nil {
+		return false, err
+	}
+
+	return found, nil
 }
 
 func (f *TrieFilter) Size() int {
