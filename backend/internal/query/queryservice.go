@@ -113,7 +113,7 @@ func (s *serviceImpl) GetHistory(ctx context.Context, interval Interval, granula
 	startTs := time.Now().UTC().Add(-interval.ToDuration())
 
 	// First, set all the timestamps
-	for i, _ := range history {
+	for i := range history {
 		ts := startTs.Add(granularity.ToDuration() * time.Duration(i))
 		history[i].Time = ts.Format(time.RFC3339)
 	}
