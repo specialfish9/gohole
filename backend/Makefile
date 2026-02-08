@@ -15,6 +15,9 @@ update:
 	go get -u ./...
 .PHONY: update
 
+bench:
+	go test -bench=. ./...
+
 dockerup:
 	docker compose -f $(COMPOSE_FILE) up -d
 .PHONY: dockerup

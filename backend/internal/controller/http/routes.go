@@ -2,7 +2,6 @@ package http
 
 import (
 	"encoding/json"
-	"fmt"
 	"gohole/internal/query"
 	"net/http"
 )
@@ -35,7 +34,7 @@ func (qr *queryRouter) getAll(w http.ResponseWriter, r *http.Request) error {
 func (qr *queryRouter) getStats(w http.ResponseWriter, r *http.Request) error {
 	interval := query.Interval(r.URL.Query().Get("interval"))
 	if interval != "" && !interval.IsValid() {
-		return fmt.Errorf("invalid interval value %s", interval)
+		return newHTTPErr(http.StatusBadRequest, "invalid interval value '%s'", interval)
 	}
 
 	stats, err := qr.queryService.GetStats(r.Context(), interval)
@@ -58,9 +57,9 @@ func (qr *queryRouter) getStatsHistory(w http.ResponseWriter, r *http.Request) e
 	granularity := query.Granularity(r.URL.Query().Get("granularity"))
 
 	if !interval.IsValid() {
-		return fmt.Errorf("invalid interval parameter value: '%s'", interval)
+		return newHTTPErr(http.StatusBadRequest, "invalid interval paramter value '%s'", interval)
 	} else if !granularity.IsValid() {
-		return fmt.Errorf("invalid granularity parameter value: '%s'", granularity)
+		return newHTTPErr(http.StatusBadRequest, "invalid granularity parameter value: '%s'", granularity)
 	}
 
 	history, err := qr.queryService.GetHistory(r.Context(), interval, granularity)
@@ -97,7 +96,7 @@ func (qr *queryRouter) getBlockListStats(w http.ResponseWriter, r *http.Request)
 func (qr *queryRouter) getHostStats(w http.ResponseWriter, r *http.Request) error {
 	interval := query.Interval(r.URL.Query().Get("interval"))
 	if !interval.IsValid() {
-		return fmt.Errorf("invalid interval value \"%s\"", interval)
+		return newHTTPErr(http.StatusBadRequest, "invalid interval value \"%s\"", interval)
 	}
 
 	stats, err := qr.queryService.GetHostStats(r.Context(), interval)
@@ -118,7 +117,7 @@ func (qr *queryRouter) getHostStats(w http.ResponseWriter, r *http.Request) erro
 func (qr *queryRouter) getDomainStats(w http.ResponseWriter, r *http.Request) error {
 	interval := query.Interval(r.URL.Query().Get("interval"))
 	if !interval.IsValid() {
-		return fmt.Errorf("invalid interval value \"%s\"", interval)
+		return newHTTPErr(http.StatusBadRequest, "invalid interval value \"%s\"", interval)
 	}
 
 	stats, err := qr.queryService.GetDomainStats(r.Context(), interval)

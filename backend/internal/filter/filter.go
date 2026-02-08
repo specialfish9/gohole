@@ -2,11 +2,34 @@ package filter
 
 import "log/slog"
 
+type Strategy string
+
+const (
+	BasicStrategy Strategy = "basic"
+	TrieStrategy  Strategy = "trie"
+	Trie2Strategy Strategy = "trie2"
+)
+
 type Filter interface {
-	// Filter rturns true to allow the query, false to block it
+	// Filter returns true if the filter contains the query, false otherwise.
+	// An error is returned if there was an issue checking the filter.
 	Filter(q string) (bool, error)
 	// Size returns the number of entries in the filter
 	Size() int
+}
+
+func NewFilter(strategy Strategy, domains []string) Filter {
+	switch strategy {
+	case BasicStrategy:
+		return NewBasic(domains)
+	case TrieStrategy:
+		return NewTrie(domains)
+	case Trie2Strategy:
+		return NewTrie2(domains)
+	default:
+		slog.Warn("unknown filter strategy, defaulting to basic", "strategy", strategy)
+		return NewBasic(domains)
+	}
 }
 
 type TrieFilter struct {
@@ -14,16 +37,7 @@ type TrieFilter struct {
 	size int
 }
 
-func (f *TrieFilter) Filter(q string) (bool, error) {
-	found, err := f.root.Contains(q)
-	if err != nil {
-		return false, err
-	}
-
-	return !found, nil
-}
-
-func Trie(domains []string) Filter {
+func NewTrie(domains []string) Filter {
 	root := NewTrieNode()
 
 	addedDomains := 0
@@ -40,6 +54,15 @@ func Trie(domains []string) Filter {
 		root: root,
 		size: addedDomains,
 	}
+}
+
+func (f *TrieFilter) Filter(q string) (bool, error) {
+	found, err := f.root.Contains(q)
+	if err != nil {
+		return false, err
+	}
+
+	return found, nil
 }
 
 func (f *TrieFilter) Size() int {
