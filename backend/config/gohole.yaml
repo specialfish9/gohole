@@ -1,0 +1,22 @@
+app:
+  log_level: "debug"
+
+http:
+  address: ":8080"
+  serve_frontend: true
+
+dns:
+  address: ":8053"
+  upstream: "1.1.1.1:53"
+
+db:
+  address: "192.168.0.3:9109"
+  user: "gohole"
+  password: "password"
+  name: "default"
+
+blocking:
+  filter_strategy: "basic"
+  blocklist_file: "block.txt"
+  local_blocklist: "localblock.txt"
+  local_allowlist: "localallow.txt"

@@ -2,7 +2,7 @@ package filter
 
 import "log/slog"
 
-type Strategy string
+type Strategy = string
 
 const (
 	BasicStrategy Strategy = "basic"

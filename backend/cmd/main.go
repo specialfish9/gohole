@@ -17,7 +17,7 @@ import (
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 )
 
-const defaultConfigPath = "./gohole.conf"
+const defaultConfigPath = "./gohole.yaml"
 const panicFilePath = "./panic.log"
 const dbConnectionAttempts = 10
 
@@ -44,13 +44,13 @@ func connectToDB(cfg *config.Config) (driver.Conn, error) {
 	var dbConn driver.Conn
 	var err error
 
-	for i := 0; i < dbConnectionAttempts; i++ {
+	for i := range dbConnectionAttempts {
 		dbConn, err = database.Connect(
-			cfg.DBAddress,
-			cfg.DBName,
-			cfg.DBUser,
-			cfg.DBPassword,
-			false,
+			cfg.DB.Address,
+			cfg.DB.Name,
+			cfg.DB.User,
+			cfg.DB.Password,
+			cfg.App.LogLevel == "debug", // TODO handle log level from config
 		)
 
 		if err != nil {
@@ -98,13 +98,13 @@ func main() {
 
 	slog.Info("created tables")
 
-	domains, err := blocklist.LoadRemote(cfg.BlocklistFile)
+	domains, err := blocklist.LoadRemote(cfg.Blocking.BlocklistFile)
 	if err != nil {
 		logPanic(err.Error())
 	}
 
-	if cfg.LocalBlockList != "" {
-		localDomains, err := blocklist.LoadLocalFile(cfg.LocalBlockList)
+	if cfg.Blocking.LocalBlockList != "" {
+		localDomains, err := blocklist.LoadLocalFile(cfg.Blocking.LocalBlockList)
 		if err != nil {
 			logPanic(err.Error())
 		}
@@ -112,20 +112,20 @@ func main() {
 	}
 
 	var allowDomains []string
-	if cfg.LocalAllowList != "" {
-		allowDomains, err = blocklist.LoadLocalFile(cfg.LocalAllowList)
+	if cfg.Blocking.LocalAllowList != "" {
+		allowDomains, err = blocklist.LoadLocalFile(cfg.Blocking.LocalAllowList)
 		if err != nil {
 			logPanic(err.Error())
 		}
 	}
 
-	reg := registry.NewRegistry(domains, allowDomains, cfg.FilterStrategy, dbConn)
+	reg := registry.NewRegistry(domains, allowDomains, cfg.Blocking.FilterStrategy, dbConn)
 
 	wg := sync.WaitGroup{}
 
-	go dns.Start(&wg, reg, cfg.DNSAddress, cfg.Upstream)
+	go dns.Start(&wg, reg, cfg.DNS.Address, cfg.DNS.Upstream)
 	wg.Add(1)
-	go http.Start(&wg, reg, cfg.HTTPAddress, cfg.ServeFrontend)
+	go http.Start(&wg, reg, cfg.HTTP.Address, cfg.HTTP.ServeFrontend)
 	wg.Add(1)
 
 	wg.Wait()

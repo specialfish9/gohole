@@ -1,5 +1,5 @@
 ENTRYPOINT := ./cmd/
-CONFIG := ./config/gohole.conf
+CONFIG := ./config/gohole.yaml
 COMPOSE_FILE := ../compose.yaml
 
 run:
