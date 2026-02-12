@@ -103,8 +103,8 @@ func main() {
 		logPanic(err.Error())
 	}
 
-	if cfg.Blocking.LocalBlockList != "" {
-		localDomains, err := blocklist.LoadLocalFile(cfg.Blocking.LocalBlockList)
+	if cfg.Blocking.LocalBlockList.Ok {
+		localDomains, err := blocklist.LoadLocalFile(cfg.Blocking.LocalBlockList.Value)
 		if err != nil {
 			logPanic(err.Error())
 		}
@@ -112,8 +112,8 @@ func main() {
 	}
 
 	var allowDomains []string
-	if cfg.Blocking.LocalAllowList != "" {
-		allowDomains, err = blocklist.LoadLocalFile(cfg.Blocking.LocalAllowList)
+	if cfg.Blocking.LocalAllowList.Ok {
+		allowDomains, err = blocklist.LoadLocalFile(cfg.Blocking.LocalAllowList.Value)
 		if err != nil {
 			logPanic(err.Error())
 		}
@@ -125,7 +125,12 @@ func main() {
 
 	go dns.Start(&wg, reg, cfg.DNS.Address, cfg.DNS.Upstream)
 	wg.Add(1)
-	go http.Start(&wg, reg, cfg.HTTP.Address, cfg.HTTP.ServeFrontend)
+
+	shouldServeFrontend := false
+	if cfg.HTTP.ServeFrontend.Ok {
+		shouldServeFrontend = cfg.HTTP.ServeFrontend.Value
+	}
+	go http.Start(&wg, reg, cfg.HTTP.Address, shouldServeFrontend)
 	wg.Add(1)
 
 	wg.Wait()

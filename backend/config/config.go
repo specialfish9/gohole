@@ -18,7 +18,7 @@ type Config struct {
 		// Address is the address on which the HTTP server will listen for incoming requests.
 		Address string `confuso:"address" validate:"required"`
 		// ServeFrontend indicates whether to serve the frontend or not.
-		ServeFrontend bool `confuso:"serve_frontend"`
+		ServeFrontend confuso.Optional[bool] `confuso:"serve_frontend"`
 	} `confuso:"http"`
 
 	DNS struct {
@@ -45,9 +45,9 @@ type Config struct {
 		// BlocklistFile is the path to the file containing the list of blocklists URLs.
 		BlocklistFile string `confuso:"blocklist_file" validate:"required"`
 		// LocalBlockList is the path to a local file containing a list of domains to block.
-		LocalBlockList string `confuso:"local_blocklist"`
+		LocalBlockList confuso.Optional[string] `confuso:"local_blocklist"`
 		// LocalAllowList is the path to a local file containing a list of domains to allow.
-		LocalAllowList string `confuso:"local_allowlist"`
+		LocalAllowList confuso.Optional[string] `confuso:"local_allowlist"`
 	} `confuso:"blocking"`
 }
 
