@@ -41,7 +41,6 @@ func (r *repositoryImpl) SaveQuery(ctx context.Context, q Query) error {
 		q.Blocked,
 		q.Host,
 		time.Unix(q.Timestamp, 0), // Convert int64 to time.Time
-		q.Timestamp,
 		q.Millis,
 	)
 
