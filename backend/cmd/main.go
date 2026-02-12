@@ -126,10 +126,7 @@ func main() {
 	go dns.Start(&wg, reg, cfg.DNS.Address, cfg.DNS.Upstream)
 	wg.Add(1)
 
-	shouldServeFrontend := false
-	if cfg.HTTP.ServeFrontend.Ok {
-		shouldServeFrontend = cfg.HTTP.ServeFrontend.Value
-	}
+	shouldServeFrontend := cfg.HTTP.ServeFrontend.Or(false)
 	go http.Start(&wg, reg, cfg.HTTP.Address, shouldServeFrontend)
 	wg.Add(1)
 

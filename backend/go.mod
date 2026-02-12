@@ -10,7 +10,7 @@ require (
 	github.com/go-chi/cors v1.2.2
 	github.com/go-playground/validator/v10 v10.30.1
 	github.com/specialfish9/confuso v0.0.3
-	github.com/specialfish9/confuso/v2 v2.0.0
+	github.com/specialfish9/confuso/v2 v2.0.1
 )
 
 require (
