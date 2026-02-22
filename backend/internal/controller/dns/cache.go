@@ -88,5 +88,6 @@ func (c *Cache) Set(key CacheKey, msg *dns.Msg, ttl uint32) {
 	c.items[key] = &CacheEntry{
 		Answer:     msg.Answer,
 		Expiration: time.Now().Add(time.Duration(ttl) * time.Second),
+		allowed:    true,
 	}
 }

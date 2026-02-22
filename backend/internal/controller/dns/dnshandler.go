@@ -46,6 +46,7 @@ func (h *Handler) handleRequest(ctx context.Context, w dns.ResponseWriter, r *dn
 	dnsutil.SetReply(response, r)
 
 	var allow bool
+	var err error
 	// cached false by default
 	var cached bool
 	cacheKey := NewCacheKey(r)
@@ -67,7 +68,7 @@ func (h *Handler) handleRequest(ctx context.Context, w dns.ResponseWriter, r *dn
 	}
 
 	if !cached {
-		allow, err := h.queryService.ShouldAllow(name)
+		allow, err = h.queryService.ShouldAllow(name)
 		if err != nil {
 			l.Error("Filtering", "name", name, "error", err.Error())
 
