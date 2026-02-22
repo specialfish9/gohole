@@ -87,10 +87,12 @@ func (h *Handler) handleRequest(ctx context.Context, w dns.ResponseWriter, r *dn
 				return
 			}
 
-			// Update the cache
-			ttl := uint32(response.Answer[0].Header().TTL)
-			l.Debug("Updating cache", "TTL", ttl)
-			h.cache.Set(cacheKey, response, ttl)
+			// Update the cache (only if there is something to cache)
+			if len(response.Answer) > 0 {
+				ttl := uint32(response.Answer[0].Header().TTL)
+				l.Debug("Updating cache", "TTL", ttl)
+				h.cache.Set(cacheKey, response, ttl)
+			}
 
 		} else {
 			l.Debug("Setting response Rcode to refused")
