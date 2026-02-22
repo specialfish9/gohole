@@ -6,11 +6,17 @@ import (
 	"net/http"
 )
 
-type queryRouter struct {
+type QueryRouter struct {
 	queryService query.Service
 }
 
-func (qr *queryRouter) getAll(w http.ResponseWriter, r *http.Request) error {
+func NewQueryRouter(queryService query.Service) *QueryRouter {
+	return &QueryRouter{
+		queryService: queryService,
+	}
+}
+
+func (qr *QueryRouter) getAll(w http.ResponseWriter, r *http.Request) error {
 	queries, err := qr.queryService.GetAll(r.Context(), 100)
 	if err != nil {
 		return err
@@ -31,7 +37,7 @@ func (qr *queryRouter) getAll(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func (qr *queryRouter) getStats(w http.ResponseWriter, r *http.Request) error {
+func (qr *QueryRouter) getStats(w http.ResponseWriter, r *http.Request) error {
 	interval := query.Interval(r.URL.Query().Get("interval"))
 	if interval != "" && !interval.IsValid() {
 		return newHTTPErr(http.StatusBadRequest, "invalid interval value '%s'", interval)
@@ -52,7 +58,7 @@ func (qr *queryRouter) getStats(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func (qr *queryRouter) getStatsHistory(w http.ResponseWriter, r *http.Request) error {
+func (qr *QueryRouter) getStatsHistory(w http.ResponseWriter, r *http.Request) error {
 	interval := query.Interval(r.URL.Query().Get("interval"))
 	granularity := query.Granularity(r.URL.Query().Get("granularity"))
 
@@ -77,7 +83,7 @@ func (qr *queryRouter) getStatsHistory(w http.ResponseWriter, r *http.Request) e
 	return nil
 }
 
-func (qr *queryRouter) getBlockListStats(w http.ResponseWriter, r *http.Request) error {
+func (qr *QueryRouter) getBlockListStats(w http.ResponseWriter, r *http.Request) error {
 	stats, err := qr.queryService.GetBlockListStats()
 	if err != nil {
 		return err
@@ -93,7 +99,7 @@ func (qr *queryRouter) getBlockListStats(w http.ResponseWriter, r *http.Request)
 	return nil
 }
 
-func (qr *queryRouter) getHostStats(w http.ResponseWriter, r *http.Request) error {
+func (qr *QueryRouter) getHostStats(w http.ResponseWriter, r *http.Request) error {
 	interval := query.Interval(r.URL.Query().Get("interval"))
 	if !interval.IsValid() {
 		return newHTTPErr(http.StatusBadRequest, "invalid interval value \"%s\"", interval)
@@ -114,7 +120,7 @@ func (qr *queryRouter) getHostStats(w http.ResponseWriter, r *http.Request) erro
 	return nil
 }
 
-func (qr *queryRouter) getDomainStats(w http.ResponseWriter, r *http.Request) error {
+func (qr *QueryRouter) getDomainStats(w http.ResponseWriter, r *http.Request) error {
 	interval := query.Interval(r.URL.Query().Get("interval"))
 	if !interval.IsValid() {
 		return newHTTPErr(http.StatusBadRequest, "invalid interval value \"%s\"", interval)

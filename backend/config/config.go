@@ -3,6 +3,8 @@ package config
 import (
 	"fmt"
 	"gohole/internal/controller/dns"
+	"gohole/internal/controller/http"
+	"gohole/internal/database"
 	"gohole/internal/filter"
 
 	"github.com/go-playground/validator/v10"
@@ -12,28 +14,8 @@ import (
 type Config struct {
 	App struct {
 		// LogLevel is the level of logging (e.g., "debug", "info", "warn", "error").
-		LogLevel string `confuso:"log_level" validate:"required"`
+		LogLevel LogLevel `confuso:"log_level" validate:"required"`
 	} `confuso:"app"`
-
-	HTTP struct {
-		// Address is the address on which the HTTP server will listen for incoming requests.
-		Address string `confuso:"address" validate:"required"`
-		// ServeFrontend indicates whether to serve the frontend or not.
-		ServeFrontend confuso.Optional[bool] `confuso:"serve_frontend"`
-	} `confuso:"http"`
-
-	DNS dns.Config `confuso:"dns"`
-
-	DB struct {
-		// Address is the address of the database.
-		Address string `confuso:"address" validate:"required"`
-		// User is the username for the database.
-		User string `confuso:"user" validate:"required"`
-		// Password is the password for the database.
-		Password string `confuso:"password" validate:"required"`
-		// Name is the name of the database.
-		Name string `confuso:"name" validate:"required"`
-	} `confuso:"db"`
 
 	Blocking struct {
 		// FilterStrategy is the strategy used to filter domains (e.g., "basic", "trie2").
@@ -45,6 +27,12 @@ type Config struct {
 		// LocalAllowList is the path to a local file containing a list of domains to allow.
 		LocalAllowList confuso.Optional[string] `confuso:"local_allowlist"`
 	} `confuso:"blocking"`
+
+	HTTP http.Config `confuso:"http"`
+
+	DNS dns.Config `confuso:"dns"`
+
+	DB database.Config `confuso:"db"`
 }
 
 func New(fileName string) (*Config, error) {

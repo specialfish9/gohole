@@ -2,30 +2,50 @@ package dns
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
-	"os"
-	"sync"
 
 	"codeberg.org/miekg/dns"
 )
 
-// Start creates the DNS server instance and runs it
-func Start(wg *sync.WaitGroup, cfg *Config, handler *Handler) {
-	defer wg.Done()
+type Server struct {
+	srv dns.Server
+	l   *slog.Logger
+	cfg *Config
+}
 
-	dns.HandleFunc(".", recoverMiddleware(handler.handleRequest)) // "." = catch-all
+func NewServer(cfg *Config, handler *Handler) *Server {
+	mux := dns.NewServeMux()
+	mux.HandleFunc(".", recoverMiddleware(handler.handleRequest)) // "." = catch-all
 
-	server := &dns.Server{
-		Addr: cfg.Address,
-		Net:  "udp",
+	return &Server{
+		srv: dns.Server{
+			Addr:    cfg.Address,
+			Net:     "udp",
+			Handler: mux,
+		},
+		l:   slog.With("component", "dnssrv"),
+		cfg: cfg,
+	}
+}
+
+func (s *Server) ID() string {
+	return "DNS-server"
+}
+
+func (s *Server) Start() error {
+	s.l.Info("Started DNS server", "address", s.cfg.Address, "upstream", s.cfg.Upstream, "cache", s.cfg.CacheEnabled.Or(false))
+	if err := s.srv.ListenAndServe(); err != nil {
+		return fmt.Errorf("dns: starting server: %w", err)
 	}
 
-	slog.Info("Started DNS server", "address", cfg.Address, "upstream", cfg.Upstream, "cache", cfg.CacheEnabled.Or(false))
-	err := server.ListenAndServe()
-	if err != nil {
-		slog.Error("Failed to start server", "error", err.Error())
-		os.Exit(1)
-	}
+	return nil
+}
+
+func (s *Server) Stop() error {
+	s.l.Info("Stopping DNS server", "address", s.srv.Addr)
+	s.srv.Shutdown(context.Background())
+	return nil
 }
 
 func recoverMiddleware(next func(context.Context, dns.ResponseWriter, *dns.Msg)) func(context.Context, dns.ResponseWriter, *dns.Msg) {

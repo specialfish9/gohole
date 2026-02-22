@@ -15,6 +15,7 @@ db:
   user: "gohole"
   password: "password"
   name: "default"
+  debug: false
 
 blocking:
   filter_strategy: "basic"

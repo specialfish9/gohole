@@ -11,63 +11,30 @@ import (
 	"gohole/internal/registry"
 	"log/slog"
 	"os"
-	"sync"
-	"time"
-
-	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
+	"os/signal"
+	"syscall"
 )
 
 const defaultConfigPath = "./gohole.yaml"
-const panicFilePath = "./panic.log"
-const dbConnectionAttempts = 10
 
-// logPanic logs the panic message to both slog and a file, then exits the program.
 func logPanic(v any) {
 	msg := fmt.Sprintf("panic: %v", v)
 	slog.Error(msg)
-
-	f, err := os.OpenFile(panicFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		slog.Error("Could not open panic.log:" + err.Error())
-	} else {
-		defer f.Close()
-		if _, err := f.Write([]byte(msg + "\n")); err != nil {
-			slog.Error("Could not write to panic.log:" + err.Error())
-		}
-	}
-
 	fmt.Println("Bye :O")
 	os.Exit(1)
 }
 
-func connectToDB(cfg *config.Config) (driver.Conn, error) {
-	var dbConn driver.Conn
-	var err error
-
-	for i := range dbConnectionAttempts {
-		dbConn, err = database.Connect(
-			cfg.DB.Address,
-			cfg.DB.Name,
-			cfg.DB.User,
-			cfg.DB.Password,
-			cfg.App.LogLevel == "debug", // TODO handle log level from config
-		)
-
-		if err != nil {
-			slog.Error(fmt.Sprintf("DB connection attempt %d failed: %v", i+1, err))
-			time.Sleep(2 * time.Second)
-		} else {
-			return dbConn, nil
-		}
-	}
-
-	return nil, fmt.Errorf("failed to connect to DB after %d attempts: %w", dbConnectionAttempts, err)
+func initLogger(cfg *config.Config) {
+	handler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		Level: config.NewLeveler(cfg.App.LogLevel),
+	})
+	slog.SetDefault(slog.New(handler))
 }
 
 func main() {
-	fmt.Println("========")
-	fmt.Println(" GOHOLE ")
-	fmt.Println("========")
+	fmt.Println("=========")
+	fmt.Println(" GOHOLE! ")
+	fmt.Println("=========")
 
 	var configPath string
 	if len(os.Args) > 1 {
@@ -79,13 +46,14 @@ func main() {
 
 	cfg, err := config.New(configPath)
 	if err != nil {
-		logPanic(err.Error())
+		fmt.Fprintf(os.Stderr, "Failed to load config: %v", err)
+		fmt.Fprintf(os.Stderr, "Bye :O")
+		os.Exit(1)
 	}
 
-	// TODO handle log level from config
-	slog.SetLogLoggerLevel(slog.LevelDebug)
+	initLogger(cfg)
 
-	dbConn, err := connectToDB(cfg)
+	dbConn, err := database.Connect(&cfg.DB, 5)
 	if err != nil {
 		logPanic(err.Error())
 	}
@@ -121,14 +89,30 @@ func main() {
 
 	reg := registry.NewRegistry(domains, allowDomains, cfg.Blocking.FilterStrategy, dbConn, cfg)
 
-	wg := sync.WaitGroup{}
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM) // SIGINT, SIGTERM
 
-	go dns.Start(&wg, &cfg.DNS, reg.DNSHandler)
-	wg.Add(1)
+	daemons := []Daemon{
+		http.NewServer(&cfg.HTTP, reg.QueryRouter),
+		dns.NewServer(&cfg.DNS, reg.DNSHandler),
+	}
 
-	shouldServeFrontend := cfg.HTTP.ServeFrontend.Or(false)
-	go http.Start(&wg, reg, cfg.HTTP.Address, shouldServeFrontend)
-	wg.Add(1)
+	for _, d := range daemons {
+		go func(d Daemon) {
+			if err := d.Start(); err != nil {
+				logPanic(fmt.Sprintf("Starting daemon %s: %v", d.ID(), err))
+			}
+		}(d)
+	}
 
-	wg.Wait()
+	<-quit
+
+	slog.Info("Shutting down servers…")
+	for _, d := range daemons {
+		if err := d.Stop(); err != nil {
+			slog.Error(fmt.Sprintf("Stopping daemon %s: %v", d.ID(), err))
+		}
+	}
+
+	slog.Info("Bye :O")
 }

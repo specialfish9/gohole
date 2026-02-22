@@ -3,25 +3,46 @@ package database
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 )
 
-func Connect(address string, db string, username string, password string, debug bool) (driver.Conn, error) {
-	conn, err := clickhouse.Open(&clickhouse.Options{
-		Addr: []string{address},
-		Auth: clickhouse.Auth{
-			Database: db,
-			Username: username,
-			Password: password,
-		},
-		DialTimeout: 5 * time.Second,
-		Debug:       debug, // prints queries for debugging
-	})
-	if err != nil {
-		return nil, fmt.Errorf("db: cannot connect to db: %w", err)
+func Connect(cfg *Config, attempts int) (driver.Conn, error) {
+	if cfg == nil {
+		panic("Can't inizialize DB with nil config!")
+	}
+
+	var conn driver.Conn
+	var err error
+
+	success := false
+
+	for i := range attempts {
+		conn, err = clickhouse.Open(&clickhouse.Options{
+			Addr: []string{cfg.Address},
+			Auth: clickhouse.Auth{
+				Database: cfg.Name,
+				Username: cfg.User,
+				Password: cfg.Password,
+			},
+			DialTimeout: 5 * time.Second,
+			Debug:       cfg.Debug.Or(false),
+		})
+
+		if err != nil {
+			slog.Error(fmt.Sprintf("DB connection attempt %d failed: %v", i+1, err))
+			time.Sleep(2 * time.Second)
+		} else {
+			success = true
+			break
+		}
+	}
+
+	if !success {
+		return nil, fmt.Errorf("db: unable to connect to database")
 	}
 
 	if err := conn.Ping(context.Background()); err != nil {

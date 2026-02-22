@@ -3,6 +3,7 @@ package registry
 import (
 	"gohole/config"
 	"gohole/internal/controller/dns"
+	"gohole/internal/controller/http"
 	"gohole/internal/database"
 	"gohole/internal/filter"
 	"gohole/internal/query"
@@ -13,6 +14,7 @@ import (
 type Registry struct {
 	QueryRepository database.Repository
 	QueryService    query.Service
+	QueryRouter     *http.QueryRouter
 
 	DNSHandler *dns.Handler
 	DNSCache   *dns.Cache
@@ -37,6 +39,7 @@ func NewRegistry(
 	return &Registry{
 		QueryRepository: repo,
 		QueryService:    queryService,
+		QueryRouter:     http.NewQueryRouter(queryService),
 
 		DNSCache:   dnsCache,
 		DNSHandler: dns.NewHandler(queryService, dnsCache, &cfg.DNS),
