@@ -7,7 +7,8 @@ http:
 
 dns:
   address: ":8053"
-  upstream: "1.1.1.1:53"
+  upstream: "192.168.0.3:53"
+  cache: true
 
 db:
   address: "192.168.0.3:9109"

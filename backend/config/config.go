@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"gohole/internal/controller/dns"
 	"gohole/internal/filter"
 
 	"github.com/go-playground/validator/v10"
@@ -21,12 +22,7 @@ type Config struct {
 		ServeFrontend confuso.Optional[bool] `confuso:"serve_frontend"`
 	} `confuso:"http"`
 
-	DNS struct {
-		// Upstream is the address of the upstream DNS server to which queries will be forwarded.
-		Upstream string `confuso:"upstream" validate:"required"`
-		// Address is the address on which the DNS server will listen for incoming queries.
-		Address string `confuso:"address" validate:"required"`
-	} `confuso:"dns"`
+	DNS dns.Config `confuso:"dns"`
 
 	DB struct {
 		// Address is the address of the database.

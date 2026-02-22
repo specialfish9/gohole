@@ -96,7 +96,7 @@ func main() {
 		slog.Error(err.Error())
 	}
 
-	slog.Info("created tables")
+	slog.Info("Created tables")
 
 	domains, err := blocklist.LoadRemote(cfg.Blocking.BlocklistFile)
 	if err != nil {
@@ -119,11 +119,11 @@ func main() {
 		}
 	}
 
-	reg := registry.NewRegistry(domains, allowDomains, cfg.Blocking.FilterStrategy, dbConn)
+	reg := registry.NewRegistry(domains, allowDomains, cfg.Blocking.FilterStrategy, dbConn, cfg)
 
 	wg := sync.WaitGroup{}
 
-	go dns.Start(&wg, reg, cfg.DNS.Address, cfg.DNS.Upstream)
+	go dns.Start(&wg, &cfg.DNS, reg.DNSHandler)
 	wg.Add(1)
 
 	shouldServeFrontend := cfg.HTTP.ServeFrontend.Or(false)

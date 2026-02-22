@@ -3,7 +3,8 @@ package database
 import "time"
 
 type Query struct {
-	Name      string `json:"name"`
+	Name string `json:"name"`
+	// Type is yet to be used.
 	Type      uint16 `json:"type"`
 	Blocked   bool   `json:"blocked"`
 	Host      string `json:"host"`
@@ -11,10 +12,9 @@ type Query struct {
 	Millis    int64  `json:"millis"`
 }
 
-func NewQuery(name string, qtype uint16, host string, blocked bool, millis int64) Query {
+func NewQuery(name string, host string, blocked bool, millis int64) Query {
 	return Query{
 		Name:      name,
-		Type:      qtype,
 		Blocked:   blocked,
 		Host:      host,
 		Timestamp: time.Now().UTC().Unix(),

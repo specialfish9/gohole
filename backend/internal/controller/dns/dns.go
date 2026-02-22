@@ -2,7 +2,6 @@ package dns
 
 import (
 	"context"
-	"gohole/internal/registry"
 	"log/slog"
 	"os"
 	"sync"
@@ -10,23 +9,18 @@ import (
 	"codeberg.org/miekg/dns"
 )
 
-func Start(wg *sync.WaitGroup, reg *registry.Registry, address string, upstream string) {
+// Start creates the DNS server instance and runs it
+func Start(wg *sync.WaitGroup, cfg *Config, handler *Handler) {
 	defer wg.Done()
 
-	// Create DNS server
-	d := &handler{
-		upstream:     upstream,
-		queryService: reg.QueryService,
-	}
-
-	dns.HandleFunc(".", recoverMiddleware(d.handleRequest)) // "." = catch-all
+	dns.HandleFunc(".", recoverMiddleware(handler.handleRequest)) // "." = catch-all
 
 	server := &dns.Server{
-		Addr: address,
+		Addr: cfg.Address,
 		Net:  "udp",
 	}
 
-	slog.Info("Started DNS server", "address", address, "upstream", upstream)
+	slog.Info("Started DNS server", "address", cfg.Address, "upstream", cfg.Upstream, "cache", cfg.CacheEnabled.Or(false))
 	err := server.ListenAndServe()
 	if err != nil {
 		slog.Error("Failed to start server", "error", err.Error())
