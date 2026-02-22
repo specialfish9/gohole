@@ -45,10 +45,10 @@ func (h *Handler) handleRequest(ctx context.Context, w dns.ResponseWriter, r *dn
 	response := new(dns.Msg)
 	dnsutil.SetReply(response, r)
 
-	var cacheKey CacheKey // TODO construct cache key
 	var allow bool
 	// cached false by default
 	var cached bool
+	cacheKey := NewCacheKey(r)
 
 	// First check the cache
 	if h.cacheEnabled {

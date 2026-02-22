@@ -13,6 +13,15 @@ type CacheKey struct {
 	Class uint16
 }
 
+func NewCacheKey(msg *dns.Msg) CacheKey {
+	question := msg.Question[0]
+	return CacheKey{
+		Name:  question.Header().Name,
+		Type:  dns.RRToType(question),
+		Class: question.Header().Class,
+	}
+}
+
 type CacheEntry struct {
 	Answer     []dns.RR
 	Expiration time.Time
