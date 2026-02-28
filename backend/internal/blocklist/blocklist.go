@@ -11,6 +11,8 @@ import (
 	"strings"
 )
 
+var ipAddrRegex = regexp.MustCompile(`[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+`)
+
 // LoadRemote reads a file containing URLs of blocklists, downloads them, and
 // returns a list of domains.
 func LoadRemote(fileName string) ([]string, error) {
@@ -104,7 +106,7 @@ func parseBlockList(data string) []string {
 	var domains []string
 
 	for _, line := range lines {
-		line = strings.TrimSpace(line)
+		line = strings.Trim(line, " \t\r\n")
 
 		// Skip comments and empty lines
 		if line == "" || strings.HasPrefix(line, "#") {
@@ -114,8 +116,7 @@ func parseBlockList(data string) []string {
 		parts := strings.Split(line, " ")
 		for _, part := range parts {
 			// Match ip addreses with regex
-			r := regexp.MustCompile(`[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+`)
-			if r.MatchString(part) {
+			if ipAddrRegex.MatchString(part) {
 				continue
 			}
 

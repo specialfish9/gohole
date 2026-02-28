@@ -134,6 +134,11 @@ func (s *serviceImpl) GetHistory(ctx context.Context, interval Interval, granula
 		// Index represents which history point this query belongs to
 		index := int((query.Timestamp - startTs.Unix()) / int64(granularity.ToDuration().Seconds()))
 
+		// Clamp to valid range
+		if index < 0 || index >= len(history) {
+			continue
+		}
+
 		if query.Blocked {
 			history[index].Blocked++
 		} else {

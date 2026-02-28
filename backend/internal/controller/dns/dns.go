@@ -51,8 +51,8 @@ func (s *Server) Stop() error {
 func recoverMiddleware(next func(context.Context, dns.ResponseWriter, *dns.Msg)) func(context.Context, dns.ResponseWriter, *dns.Msg) {
 	return func(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) {
 		defer func() {
-			if r := recover(); r != nil {
-				slog.Error("PANIC!", "message", r)
+			if err := recover(); err != nil {
+				slog.Error("PANIC!", "message", err)
 			}
 		}()
 
