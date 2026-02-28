@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"gohole/internal/database"
 	"gohole/internal/filter"
-	"log/slog"
 	"math"
 	"time"
 )
