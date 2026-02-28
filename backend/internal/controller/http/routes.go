@@ -17,7 +17,9 @@ func NewQueryRouter(queryService query.Service) *QueryRouter {
 }
 
 func (qr *QueryRouter) getAll(w http.ResponseWriter, r *http.Request) error {
-	queries, err := qr.queryService.GetAll(r.Context(), 100)
+	name := r.URL.Query().Get("name")
+
+	queries, err := qr.queryService.GetAll(r.Context(), 100, name)
 	if err != nil {
 		return err
 	}

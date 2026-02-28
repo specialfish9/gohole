@@ -3,33 +3,22 @@ import { goholeAPI, type Query, type BlocklistStats, type HostStat, QueryStats, 
 import { StatsCards } from "@/components/dashboard/stats-cards"
 import { QueryChart } from "@/components/dashboard/query-chart"
 import { QueryTable } from "@/components/dashboard/query-table"
-import { ThemeToggle } from "@/components/theme-toggle"
-import { Button } from "@/components/ui/button"
-import { RefreshCw, Settings, Upload } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 export default function Dashboard() {
   const [stats, setStats] = useState<QueryStats>()
   const [queries, setQueries] = useState<Query[]>([])
-  const [loading, setLoading] = useState(false)
   const [timeInterval, setTimeInterval] = useState("24h")
   const [granularity, setGranularity] = useState("1h")
-  const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
   const [blocklistStats, setBlocklistStats] = useState<BlocklistStats>()
   const [hostStats, setHostStats] = useState<HostStat[]>([])
   const [domainStats, setDomainStats] = useState<DomainStats>()
   const { toast } = useToast()
 
   const fetchQueries = async () => {
-    setLoading(true)
     try {
       const queryData = await goholeAPI.getQueries()
       setQueries(queryData)
-
-      // toast({
-      //   title: "Queries updated",
-      //   description: `Loaded ${queryData.length} DNS queries`,
-      // })
     } catch (error) {
       console.error('Failed to fetch queries:', error)
       toast({
@@ -37,8 +26,6 @@ export default function Dashboard() {
         description: "Failed to fetch query data. Check if the backend is running.",
         variant: "destructive",
       })
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -47,7 +34,6 @@ export default function Dashboard() {
       // This will fall back to calculating stats from queries if the endpoint doesn't exist yet
       const stats = await goholeAPI.getStats(timeInterval)
       setStats(stats)
-      setLastUpdated(new Date())
     } catch (error) {
       console.error('Failed to fetch stats:', error)
     }
@@ -140,32 +126,6 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <img src="/gohole.png" alt="Gohole Logo" className="h-12 w-12" />
-              <h1 className="text-2xl font-bold">Gohole</h1>
-              <div className="text-xs text-muted-foreground">
-                Last updated: {lastUpdated.toLocaleTimeString()}
-              </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={fetchQueries}
-                disabled={loading}
-              >
-                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-              </Button>
-              <ThemeToggle />
-            </div>
-          </div>
-        </div>
-      </header>
-
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6 space-y-6">
         {/* Statistics Cards */}
@@ -189,8 +149,6 @@ export default function Dashboard() {
           onGranularityChange={setGranularity}
         />
 
-        {/* Query Table */}
-        <QueryTable queries={queries} />
       </main>
     </div>
   )

@@ -11,7 +11,7 @@ import (
 
 type Service interface {
 	Save(ctx context.Context, q database.Query) error
-	GetAll(ctx context.Context, limit int) ([]database.Query, error)
+	GetAll(ctx context.Context, limit int, name string) ([]database.Query, error)
 	GetStats(ctx context.Context, interval Interval) (*Stats, error)
 	GetHistory(ctx context.Context, interval Interval, granularity Granularity) ([]QueryHistoryPoint, error)
 	GetBlockListStats() (*BlockListStats, error)
@@ -38,8 +38,8 @@ func (s *serviceImpl) Save(ctx context.Context, q database.Query) error {
 	return s.repo.SaveQuery(ctx, q)
 }
 
-func (s *serviceImpl) GetAll(ctx context.Context, limit int) ([]database.Query, error) {
-	return s.repo.FindAllLimit(ctx, limit)
+func (s *serviceImpl) GetAll(ctx context.Context, limit int, name string) ([]database.Query, error) {
+	return s.repo.FindAllLimit(ctx, limit, name)
 }
 
 // ShouldAllow checks if a query should be allowed or blocked based on the allow and block filters.

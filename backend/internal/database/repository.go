@@ -12,7 +12,10 @@ import (
 type Repository interface {
 	SaveQuery(ctx context.Context, q Query) error
 	FindAll(ctx context.Context) ([]Query, error)
-	FindAllLimit(ctx context.Context, limit int) ([]Query, error)
+	// FindAllLimit retrieves all queries from the database with an optional limit and name filter.
+	// If `limit` is greater than 0, it limits the number of results returned. If `name` is not empty,
+	// it filters the results to include only queries with the specified name.
+	FindAllLimit(ctx context.Context, limit int, name string) ([]Query, error)
 	// FindAllByInterval retrieves all queries from the database that were made
 	// after the specified `since`.
 	FindAllByInterval(ctx context.Context, since time.Time) ([]Query, error)
@@ -52,16 +55,23 @@ func (r *repositoryImpl) SaveQuery(ctx context.Context, q Query) error {
 }
 
 func (r *repositoryImpl) FindAll(ctx context.Context) ([]Query, error) {
-	return r.FindAllLimit(ctx, -1)
+	return r.FindAllLimit(ctx, -1, "")
 }
 
-func (r *repositoryImpl) FindAllLimit(ctx context.Context, limit int) ([]Query, error) {
+func (r *repositoryImpl) FindAllLimit(ctx context.Context, limit int, name string) ([]Query, error) {
 	baseQuery := `
 		SELECT name, type, host, blocked, timestamp, millis
 		FROM query
-		ORDER BY timestamp DESC
   `
+
 	args := []any{}
+
+	if name != "" {
+		baseQuery += " WHERE name ilike ?"
+		args = append(args, "%"+name+"%")
+	}
+
+	baseQuery += "ORDER BY timestamp DESC"
 
 	if limit > 0 {
 		baseQuery += " LIMIT ?"

@@ -3,6 +3,7 @@ package http
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 )
 
@@ -38,12 +39,14 @@ func errorHandler(f func(w http.ResponseWriter, r *http.Request) error) http.Han
 
 		if isHTTP, httpErr := isHTTPError(err); isHTTP {
 			http.Error(w, httpErr.Message, httpErr.Status)
+			slog.Error("HTTP error", "status", httpErr.Status, "message", httpErr.Message)
 			return
 		}
 
 		// For any other error, return a generic 500 Internal Server Error
 		if err != nil {
 			http.Error(w, err.Error(), 500)
+			slog.Error("Internal server error", "error", err)
 		}
 
 	}

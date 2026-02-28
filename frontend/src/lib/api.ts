@@ -45,9 +45,14 @@ class GoHoleAPI {
     this.baseURL = baseURL
   }
 
-  async getQueries(): Promise<Query[]> {
+  async getQueries(filter?: string): Promise<Query[]> {
     try {
-      const response = await fetch(`${this.baseURL}/api/queries`)
+      let q = ""
+      if (filter) {
+        q += `name=${encodeURIComponent(filter)}`
+      }
+
+      const response = await fetch(`${this.baseURL}/api/queries?${q}`)
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }

@@ -247,7 +247,7 @@ export function QueryChart({
                       <div className="text-2xl font-bold">{domainStats
                         ? Math.round(domainStats.blocked * 100 / domainStats.total)
                         : 0}%</div>
-                      <p className="text-xs text-muted-foreground">blocked</p>
+                      <p className="text-xs text-muted-foreground">domains blocked</p>
                     </CardContent>
                   </Card>
                 </div>
@@ -314,15 +314,16 @@ export function QueryChart({
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="col-span-2">
           <CardHeader>
             <CardTitle>Hosts activity </CardTitle>
             <div className="text-sm text-muted-foreground">
               Current period: {intervalOptions.find(opt => opt.value === interval)?.label}
             </div>
           </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+          <CardContent className="grid gap-4 md:grid-cols-2">
+            { /* PIE CHART */}
+            <ResponsiveContainer width="100%" height={500}>
               <PieChart>
                 <Pie
                   data={hostPieData}
@@ -340,17 +341,8 @@ export function QueryChart({
                 <Legend />
               </PieChart>
             </ResponsiveContainer>
-          </CardContent>
-        </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Hosts stats</CardTitle>
-            <div className="text-sm text-muted-foreground">
-              Current period: {intervalOptions.find(opt => opt.value === interval)?.label}
-            </div>
-          </CardHeader>
-          <CardContent>
+            { /* TABLE */}
             <Table>
               <TableHeader>
                 <TableRow>
@@ -398,6 +390,6 @@ export function QueryChart({
           </CardContent>
         </Card>
       </div>
-    </div>
+    </div >
   )
 }
