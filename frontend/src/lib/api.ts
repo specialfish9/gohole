@@ -38,6 +38,17 @@ interface DomainStats {
   topAllowed: { domain: string; count: number }[]
 }
 
+interface DomainDetail {
+  blocked: boolean
+  count: number
+  points: DomainDetailPoint[]
+}
+
+interface DomainDetailPoint {
+  time: string
+  count: number
+}
+
 class GoHoleAPI {
   private baseURL: string
 
@@ -140,26 +151,19 @@ class GoHoleAPI {
     }
   }
 
-  async uploadBlocklist(file: File): Promise<{ success: boolean; message: string }> {
+  async getDomainDetails(name: string, interval: string = '24h', granularity: string = '1h'): Promise<DomainDetail> {
     try {
-      const formData = new FormData()
-      formData.append('blocklist', file)
-
-      const response = await fetch(`${this.baseURL}/api/blocklist/upload`, {
-        method: 'POST',
-        body: formData
-      })
-
+      const response = await fetch(`${this.baseURL}/api/domains/${name}?interval=${interval}&granularity=${granularity}`)
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
-
       return await response.json()
     } catch (error) {
-      console.error('Failed to upload blocklist:', error)
+      console.error('Failed to fetch domain stats:', error)
       throw error
     }
   }
+
 
   private calculateStatsFromQueries(queries: Query[]): QueryStats {
     const totalQueries = queries.length
@@ -263,4 +267,4 @@ class GoHoleAPI {
 // Export singleton instance
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || window.location.origin;
 export const goholeAPI = new GoHoleAPI(API_BASE_URL)
-export type { Query, QueryStats, QueryHistoryPoint, BlocklistStats, HostStat, DomainStats }
+export type { Query, QueryStats, QueryHistoryPoint, BlocklistStats, HostStat, DomainStats, DomainDetail }

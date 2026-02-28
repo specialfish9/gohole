@@ -22,6 +22,7 @@ type Repository interface {
 	FindHostStats(ctx context.Context, since time.Time) ([]HostStat, error)
 	FindDomainStats(ctx context.Context, since time.Time) (DomainStats, error)
 	FindTopDomains(ctx context.Context, blocked bool, since time.Time, limit int) ([]TopDomain, error)
+	FindDomainDetailsPoints(ctx context.Context, name string, since time.Time, granularity time.Duration) ([]Point, error)
 }
 
 type repositoryImpl struct {
@@ -104,15 +105,16 @@ func (r *repositoryImpl) FindAllLimit(ctx context.Context, limit int, name strin
 }
 
 func (r *repositoryImpl) FindAllByInterval(ctx context.Context, since time.Time) ([]Query, error) {
-	rows, err := r.conn.Query(ctx, `
+	q := `
     SELECT name, type, blocked, timestamp
     FROM query
 		WHERE timestamp >= ?
-    ORDER BY timestamp DESC
-	`, since)
+	  ORDER BY timestamp DESC`
+
+	rows, err := r.conn.Query(ctx, q, since)
 
 	if err != nil {
-		return nil, fmt.Errorf("repository: cannot fetch all queries: %w", err)
+		return nil, fmt.Errorf("repository: cannot fetch queries: %w", err)
 	}
 
 	defer rows.Close()
@@ -218,4 +220,46 @@ func (r *repositoryImpl) FindTopDomains(ctx context.Context, blocked bool, since
 	}
 
 	return domains, nil
+}
+
+func (r *repositoryImpl) FindDomainDetailsPoints(ctx context.Context, name string, since time.Time, granularity time.Duration) ([]Point, error) {
+	var aggr string
+
+	switch granularity {
+	case time.Minute:
+		aggr = "toStartOfMinute(timestamp)"
+	case time.Hour:
+		aggr = "toStartOfHour(timestamp)"
+	case 24 * time.Hour:
+		aggr = "toStartOfDay(timestamp)"
+	default:
+		return nil, fmt.Errorf("repository: unsupported granularity: %v", granularity)
+	}
+
+	q := fmt.Sprintf(`
+		SELECT %s AS time, count() AS count
+		FROM query
+		where name = ? AND timestamp >= ?
+		GROUP BY time
+		ORDER BY time;
+	`, aggr)
+
+	rows, err := r.conn.Query(ctx, q, name, since)
+	if err != nil {
+		return nil, fmt.Errorf("repository: cannot fetch domain details points: %w", err)
+	}
+	defer rows.Close()
+
+	var points []Point
+
+	for rows.Next() {
+		var p Point
+		if err := rows.Scan(&p.Time, &p.Count); err != nil {
+			slog.Error("scan failed", "error", err)
+			continue
+		}
+		points = append(points, p)
+	}
+
+	return points, nil
 }

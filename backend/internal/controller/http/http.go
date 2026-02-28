@@ -40,6 +40,8 @@ func NewServer(cfg *Config, qr *QueryRouter) *Server {
 	r.Get("/api/hosts/stats", errorHandler(qr.getHostStats))
 	r.Get("/api/domains/stats", errorHandler(qr.getDomainStats))
 
+	r.Get("/api/domains/{name}", errorHandler(qr.getDomainDetails))
+
 	r.Get("/api/blocklist/stats", errorHandler(qr.getBlockListStats))
 
 	fe := cfg.ServeFrontend.Or(true)

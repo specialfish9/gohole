@@ -2,7 +2,7 @@ ENTRYPOINT := ./cmd/
 CONFIG := ./config/gohole.yaml
 COMPOSE_FILE := ../compose.yaml
 
-run:
+run: vet
 	go run $(ENTRYPOINT) $(CONFIG)
 .PHONY: run
 
@@ -15,8 +15,15 @@ update:
 	go get -u ./...
 .PHONY: update
 
+vet:
+	go fmt ./...
+	go fix ./...
+	go vet ./...
+.PHONY: vet
+
 bench:
 	go test -bench=. ./...
+.PHONY: bench
 
 dockerup:
 	docker compose -f $(COMPOSE_FILE) up -d

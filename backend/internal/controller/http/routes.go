@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"gohole/internal/query"
 	"net/http"
+
+	"github.com/go-chi/chi/v5"
 )
 
 type QueryRouter struct {
@@ -134,6 +136,42 @@ func (qr *QueryRouter) getDomainStats(w http.ResponseWriter, r *http.Request) er
 	}
 
 	b, err := json.Marshal(&stats)
+	if err != nil {
+		return err
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Write(b)
+
+	return nil
+}
+
+func (qr *QueryRouter) getDomainDetails(w http.ResponseWriter, r *http.Request) error {
+	interval := query.Interval(r.URL.Query().Get("interval"))
+	granularity := query.Granularity(r.URL.Query().Get("granularity"))
+
+	if !interval.IsValid() {
+		return newHTTPErr(http.StatusBadRequest, "invalid interval paramter value '%s'", interval)
+	} else if !granularity.IsValid() {
+		return newHTTPErr(http.StatusBadRequest, "invalid granularity parameter value: '%s'", granularity)
+	}
+
+	if granularity != query.Granularity1M &&
+		granularity != query.Granularity1D &&
+		granularity != query.Granularity1H {
+		return newHTTPErr(http.StatusBadRequest, "granularity parameter value must be one of 'minute', 'hour', or 'day'")
+	}
+
+	name := chi.URLParam(r, "name")
+	if name == "" {
+		return newHTTPErr(http.StatusBadRequest, "missing 'name' parameter")
+	}
+
+	details, err := qr.queryService.GetDomainDetails(r.Context(), name, interval, granularity)
+	if err != nil {
+		return err
+	}
+
+	b, err := json.Marshal(&details)
 	if err != nil {
 		return err
 	}

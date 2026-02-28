@@ -125,3 +125,14 @@ type DomainStats struct {
 	TopBlocked []database.TopDomain `json:"topBlocked"`
 	TopAllowed []database.TopDomain `json:"topAllowed"`
 }
+
+type DomainDetail struct {
+	Blocked bool                `json:"blocked"`
+	Count   int                 `json:"count"`
+	Points  []DomainDetailPoint `json:"points"`
+}
+
+type DomainDetailPoint struct {
+	Time  string `json:"time"`
+	Count uint64 `json:"count"`
+}

@@ -1,11 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Label } from "@/components/ui/label"
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Shield, CheckCircle, Activity, AlertTriangle } from "lucide-react"
 import { DomainStats, HostStat } from "@/lib/api"
+import { DefaultIntervalOptions, TimePicker } from "../time-picker"
 
 interface QueryChartProps {
   pieData: Array<{ name: string; value: number; color: string }>
@@ -17,23 +16,6 @@ interface QueryChartProps {
   onIntervalChange: (interval: string) => void
   onGranularityChange: (granularity: string) => void
 }
-
-const intervalOptions = [
-  { value: "1h", label: "Last Hour" },
-  { value: "6h", label: "Last 6 Hours" },
-  { value: "24h", label: "Last 24 Hours" },
-  { value: "7d", label: "Last 7 Days" },
-  { value: "30d", label: "Last 30 Days" }
-]
-
-const granularityOptions = [
-  { value: "1m", label: "1 Minute" },
-  { value: "5m", label: "5 Minutes" },
-  { value: "15m", label: "15 Minutes" },
-  { value: "1h", label: "1 Hour" },
-  { value: "6h", label: "6 Hours" },
-  { value: "1d", label: "1 Day" }
-]
 
 const hostPieColors = [
   "#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#8dd1e1",
@@ -56,6 +38,31 @@ export function QueryChart({
   }))
 
   hostData.sort((a, b) => b.queryCount - a.queryCount)
+
+  const dateFormat = () => {
+    if (granularity === "1m" || granularity === "5m" || granularity === "15m") {
+      return {
+        hour: "2-digit",
+        minute: "2-digit"
+      }
+    } else if (granularity === "1h") {
+      return {
+        hour: "2-digit",
+        minute: "2-digit"
+      }
+    } else if (granularity === "1d") {
+      return {
+        month: "numeric",
+        day: "numeric"
+      }
+    }
+    return {
+      month: "numeric",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    }
+  }
 
   // Custom tooltip for bar chart
   const CustomTooltip = ({ active, payload, label }: any) => {
@@ -96,44 +103,18 @@ export function QueryChart({
 
   return (
     <div>
-      <div className="grid grid-cols-4 gap-4 mb-10">
-        <div className="space-y-2">
-          <Label htmlFor="interval-select">Time Interval</Label>
-          <Select value={interval} onValueChange={onIntervalChange}>
-            <SelectTrigger id="interval-select">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {intervalOptions.map(option => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="granularity-select">Granularity</Label>
-          <Select value={granularity} onValueChange={onGranularityChange}>
-            <SelectTrigger id="granularity-select">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {granularityOptions.map(option => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+      <TimePicker
+        interval={interval}
+        granularity={granularity}
+        onIntervalChange={onIntervalChange}
+        onGranularityChange={onGranularityChange}
+      />
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Query Distribution</CardTitle>
             <div className="text-sm text-muted-foreground">
-              Current period: {intervalOptions.find(opt => opt.value === interval)?.label}
+              Current period: {DefaultIntervalOptions.find(opt => opt.value === interval)?.label}
             </div>
           </CardHeader>
           <CardContent>
@@ -162,7 +143,7 @@ export function QueryChart({
           <CardHeader>
             <CardTitle>Queries Over Time</CardTitle>
             <div className="text-sm text-muted-foreground">
-              Current period: {intervalOptions.find(opt => opt.value === interval)?.label}
+              Current period: {DefaultIntervalOptions.find(opt => opt.value === interval)?.label}
             </div>
           </CardHeader>
           <CardContent>
@@ -172,6 +153,9 @@ export function QueryChart({
                 <XAxis
                   dataKey="time"
                   className="text-xs fill-muted-foreground"
+                  tickFormatter={
+                    (value) => new Date(value)
+                      .toLocaleString("en-UK", dateFormat())}
                   tick={{ fontSize: 12 }}
                 />
                 <YAxis
@@ -201,7 +185,7 @@ export function QueryChart({
           <CardHeader>
             <CardTitle>Domain stats</CardTitle>
             <div className="text-sm text-muted-foreground">
-              Current period: {intervalOptions.find(opt => opt.value === interval)?.label}
+              Current period: {DefaultIntervalOptions.find(opt => opt.value === interval)?.label}
             </div>
           </CardHeader>
           <CardContent>
@@ -275,7 +259,9 @@ export function QueryChart({
                             {index + 1}
                           </TableCell>
                           <TableCell className="font-mono text-sm max-w-[300px] truncate">
-                            {topBlocked.domain}
+                            <a href={"/domain?d=" + topBlocked.domain} className="hover:underline">
+                              {topBlocked.domain}
+                            </a>
                           </TableCell>
                           <TableCell>
                             <Badge variant="destructive">{topBlocked.count ?? 0}</Badge>
@@ -299,7 +285,9 @@ export function QueryChart({
                             {index + 1}
                           </TableCell>
                           <TableCell className="font-mono text-sm max-w-[300px] truncate">
-                            {topAllowed.domain}
+                            <a href={"/domain?d=" + topAllowed.domain} className="hover:underline">
+                              {topAllowed.domain}
+                            </a>
                           </TableCell>
                           <TableCell>
                             <Badge className="bg-success text-success-foreground">{topAllowed.count ?? 0}</Badge>
@@ -318,7 +306,7 @@ export function QueryChart({
           <CardHeader>
             <CardTitle>Hosts activity </CardTitle>
             <div className="text-sm text-muted-foreground">
-              Current period: {intervalOptions.find(opt => opt.value === interval)?.label}
+              Current period: {DefaultIntervalOptions.find(opt => opt.value === interval)?.label}
             </div>
           </CardHeader>
           <CardContent className="grid gap-4 md:grid-cols-2">

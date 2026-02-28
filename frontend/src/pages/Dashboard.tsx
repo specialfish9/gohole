@@ -2,7 +2,6 @@ import { useEffect, useState } from "react"
 import { goholeAPI, type Query, type BlocklistStats, type HostStat, QueryStats, DomainStats } from "@/lib/api"
 import { StatsCards } from "@/components/dashboard/stats-cards"
 import { QueryChart } from "@/components/dashboard/query-chart"
-import { QueryTable } from "@/components/dashboard/query-table"
 import { useToast } from "@/hooks/use-toast"
 
 export default function Dashboard() {

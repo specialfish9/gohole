@@ -38,3 +38,8 @@ type TopDomain struct {
 	Domain string `json:"domain"`
 	Count  uint64 `json:"count"`
 }
+
+type Point struct {
+	Time  time.Time `json:"time"`
+	Count uint64    `json:"count"`
+}

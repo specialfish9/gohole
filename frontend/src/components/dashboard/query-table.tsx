@@ -6,7 +6,6 @@ import { useEffect, useState } from "react"
 import { goholeAPI, type Query } from "@/lib/api"
 import { useToast } from "@/hooks/use-toast"
 import { useNavigate, useSearchParams } from "react-router-dom"
-import { setFips } from "crypto"
 
 export const QueryTable = () => {
   const [filter, setFilter] = useState("");
@@ -85,7 +84,9 @@ export const QueryTable = () => {
             {queries.map((query, index) => (
               <TableRow key={index}>
                 <TableCell className="font-mono text-sm max-w-[300px] truncate">
-                  {query.name}
+                  <a href={"/domain?d=" + query.name} className="hover:underline">
+                    {query.name}
+                  </a>
                 </TableCell>
                 <TableCell className="font-mono text-sm max-w-[300px] truncate">
                   {query.millis}
@@ -116,7 +117,13 @@ export const QueryTable = () => {
                   </div>
                 </TableCell>
                 <TableCell className="text-muted-foreground">
-                  {query.timestamp || new Date().toLocaleTimeString()}
+                  {new Date(query.timestamp).toLocaleDateString('en-UK', {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    day: "2-digit",
+                    month: "short",
+                    year: "2-digit"
+                  }) || new Date().toLocaleTimeString()}
                 </TableCell>
               </TableRow>
             ))}

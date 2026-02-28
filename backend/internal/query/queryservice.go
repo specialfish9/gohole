@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"gohole/internal/database"
 	"gohole/internal/filter"
+	"log/slog"
 	"math"
 	"time"
 )
@@ -17,6 +18,7 @@ type Service interface {
 	GetBlockListStats() (*BlockListStats, error)
 	GetHostStats(ctx context.Context, interival Interval) ([]database.HostStat, error)
 	GetDomainStats(ctx context.Context, interval Interval) (DomainStats, error)
+	GetDomainDetails(ctx context.Context, name string, interval Interval, granularity Granularity) (*DomainDetail, error)
 	ShouldAllow(name string) (bool, error)
 }
 
@@ -186,4 +188,39 @@ func (s *serviceImpl) GetDomainStats(ctx context.Context, interval Interval) (Do
 	ret.TopAllowed = allowed
 
 	return ret, nil
+}
+
+func (s *serviceImpl) GetDomainDetails(ctx context.Context, name string, interval Interval, granularity Granularity) (*DomainDetail, error) {
+	step := granularity.ToDuration()
+	since := time.Now().UTC().Add(-interval.ToDuration())
+
+	points, err := s.repo.FindDomainDetailsPoints(ctx, name, since, step)
+	if err != nil {
+		return nil, fmt.Errorf("query service: cannot fetch domain details points: %w", err)
+	}
+
+	var jsonPoints []DomainDetailPoint
+	pointMap := make(map[time.Time]uint64)
+	for _, point := range points {
+		pointMap[point.Time] = point.Count
+	}
+
+	now := time.Now().UTC()
+	for t := since.Truncate(step); !t.After(now); t = t.Add(step) {
+		jsonPoints = append(jsonPoints, DomainDetailPoint{
+			Time:  t.Format(time.RFC3339),
+			Count: pointMap[t],
+		})
+	}
+
+	block, err := s.blockFilter.Filter(name)
+	if err != nil {
+		return nil, fmt.Errorf("query service: error checking block filter: %w", err)
+	}
+
+	return &DomainDetail{
+		Points:  jsonPoints,
+		Blocked: block,
+		Count:   len(points),
+	}, nil
 }
