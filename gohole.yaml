@@ -1,22 +1,35 @@
 app:
-  log_level: "debug"
+  # Log level: debug | info | warn | error
+  log_level: "info"   
 
 http:
+  # Listen address for HTTP server
   address: ":8080"
+  # Enable web-based admin interface
   serve_frontend: true
 
 dns:
-  address: ":8053"
-  upstream: "1.1.1.1:53"
+  # Listen address for DNS server (UDP)
+  address: ":53"
+  # Upstream DNS server for non-blocked queries
+  upstream: "1.1.1.1"
+  # Enable DNS caching for faster responses
+  cache: true 
 
 db:
-  address: "clickhouse:9000"
+  address: "localhost:9000"
   user: "gohole"
   password: "password"
   name: "default"
+  debug: false
 
 blocking:
-  filter_strategy: "basic"
-  blocklist_file: "block.txt"
-  local_blocklist: "localblock.txt"
-  local_allowlist: "localallow.txt"
+  # Blocking strategy: basic | trie | trie2 
+  # Note that the trie-based strategies are experimental
+  filter_strategy: "basic"         
+  # File containing remote blocklist URLs, one per line
+  blocklist_file: "block.txt"      
+  # Optional: local file with additional domains to block
+  local_blocklist: "localblock.txt"   
+  # Optional: local file with domains to always allow
+  local_allowlist: "localallow.txt"   
