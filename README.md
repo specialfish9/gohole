@@ -52,3 +52,4 @@ npm run dev
 ## TODOs
 - [] Add migration tool for ClickHouse
 - [] Improve dashboard UI/UX
+- [] Benchmarks
