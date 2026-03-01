@@ -1,4 +1,16 @@
 services:
+  gohole:
+    image: specialfish9/gohole:latest
+    links:
+      - clickhouse
+    ports:
+      - "8080:8080/tcp"
+      - "53:53/udp"
+    cap_add:
+      - NET_ADMIN
+    volumes:
+      - ./gohole.yaml:/config/gohole.yaml
+      - ./block.txt:/block.txt
   clickhouse:
     image: clickhouse/clickhouse-server:latest
     container_name: clickhouse
@@ -15,16 +27,3 @@ services:
       nofile:
         soft: 262144
         hard: 262144
-  gohole:
-    image: specialfish9/gohole:latest
-    links:
-      - clickhouse
-    ports:
-      - "8080:8080/tcp"
-      - "8053:8053/tcp"
-      - "53:53/udp"
-    cap_add:
-      - NET_ADMIN
-    volumes:
-      - ./gohole.conf:/gohole.conf
-      - ./block.txt:/block.txt
