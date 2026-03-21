@@ -9,6 +9,7 @@ exposed through a web dashboard.
 
 ## Features
 - DNS-based ad & tracker blocking
+- Super-duper easy to set up and use, with a user-friendly web dashboard
 - Configurable blocklists and allowlists in the same format as Pi-hole
 - Custom upstream DNS server
 - High-performance query logging (ClickHouse)
