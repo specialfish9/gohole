@@ -17,7 +17,7 @@ dns:
   cache: true 
 
 db:
-  address: "localhost:9000"
+  address: "clickhouse:9000"
   user: "gohole"
   password: "password"
   name: "default"
@@ -30,6 +30,6 @@ blocking:
   # File containing remote blocklist URLs, one per line
   blocklist_file: "block.txt"      
   # Optional: local file with additional domains to block
-  local_blocklist: "localblock.txt"   
+  # local_blocklist: "localblock.txt"   
   # Optional: local file with domains to always allow
-  local_allowlist: "localallow.txt"   
+  # local_allowlist: "localallow.txt"   
