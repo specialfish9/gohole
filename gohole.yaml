@@ -12,7 +12,7 @@ dns:
   # Listen address for DNS server (UDP)
   address: ":53"
   # Upstream DNS server for non-blocked queries
-  upstream: "1.1.1.1"
+  upstream: "1.1.1.1:53"
   # Enable DNS caching for faster responses
   cache: true 
 
