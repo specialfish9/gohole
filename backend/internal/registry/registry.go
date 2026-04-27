@@ -1,6 +1,7 @@
 package registry
 
 import (
+	"fmt"
 	"gohole/config"
 	"gohole/internal/controller/dns"
 	"gohole/internal/controller/http"
@@ -26,7 +27,7 @@ func NewRegistry(
 	filterStrategy filter.Strategy,
 	conn driver.Conn,
 	cfg *config.Config,
-) *Registry {
+) (*Registry, error) {
 	blockFilter := filter.NewFilter(filterStrategy, blockedDomains)
 	allowFilter := filter.NewFilter(filterStrategy, allowedDomains)
 
@@ -36,12 +37,17 @@ func NewRegistry(
 
 	dnsCache := dns.NewCache()
 
+	dnsHandler, err := dns.NewHandler(queryService, dnsCache, &cfg.DNS)
+	if err != nil {
+		return nil, fmt.Errorf("creating DNS handler: %w", err)
+	}
+
 	return &Registry{
 		QueryRepository: repo,
 		QueryService:    queryService,
 		QueryRouter:     http.NewQueryRouter(queryService),
 
 		DNSCache:   dnsCache,
-		DNSHandler: dns.NewHandler(queryService, dnsCache, &cfg.DNS),
-	}
+		DNSHandler: dnsHandler,
+	}, nil
 }

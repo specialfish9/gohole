@@ -39,7 +39,7 @@ func New(fileName string) (*Config, error) {
 	var config Config
 
 	if err := confuso.Do(fileName, &config); err != nil {
-		return nil, fmt.Errorf("config: loading config file: %w", err)
+		return nil, fmt.Errorf("config: %w", err)
 	}
 
 	validate := validator.New(validator.WithRequiredStructEnabled())

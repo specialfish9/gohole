@@ -87,7 +87,10 @@ func main() {
 		}
 	}
 
-	reg := registry.NewRegistry(domains, allowDomains, cfg.Blocking.FilterStrategy, dbConn, cfg)
+	reg, err := registry.NewRegistry(domains, allowDomains, cfg.Blocking.FilterStrategy, dbConn, cfg)
+	if err != nil {
+		logPanic(err.Error())
+	}
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM) // SIGINT, SIGTERM

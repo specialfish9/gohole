@@ -8,5 +8,6 @@ type Config struct {
 	// Address is the address on which the DNS server will listen for incoming queries.
 	Address string `confuso:"address" validate:"required"`
 	// CacheEnabled toggles the cache. Disabled by default as it is an experimental feature.
-	CacheEnabled confuso.Optional[bool] `confuso:"cache"`
+	CacheEnabled  confuso.Optional[bool]     `confuso:"cache"`
+	CustomDomains confuso.Optional[[]string] `confuso:"custom_domains"`
 }
