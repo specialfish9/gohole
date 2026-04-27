@@ -16,8 +16,9 @@ type Registry struct {
 	QueryService    query.Service
 	QueryRouter     *http.QueryRouter
 
-	DNSHandler *dns.Handler
-	DNSCache   *dns.Cache
+	UDPDNSHandler *dns.Handler
+	TCPDNSHandler *dns.Handler
+	DNSCache      *dns.Cache
 }
 
 func NewRegistry(
@@ -41,7 +42,8 @@ func NewRegistry(
 		QueryService:    queryService,
 		QueryRouter:     http.NewQueryRouter(queryService),
 
-		DNSCache:   dnsCache,
-		DNSHandler: dns.NewHandler(queryService, dnsCache, &cfg.DNS),
+		DNSCache:      dnsCache,
+		TCPDNSHandler: dns.NewHandler(queryService, dns.TCP, dnsCache, &cfg.DNS),
+		UDPDNSHandler: dns.NewHandler(queryService, dns.UDP, dnsCache, &cfg.DNS),
 	}
 }
