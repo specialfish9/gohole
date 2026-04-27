@@ -11,6 +11,7 @@ import (
 
 	"codeberg.org/miekg/dns"
 	"codeberg.org/miekg/dns/dnsutil"
+	"github.com/google/uuid"
 )
 
 type Handler struct {
@@ -31,7 +32,10 @@ func NewHandler(queryService query.Service, cache *Cache, cfg *Config) *Handler 
 
 // handleRequest forwards DNS queries to the upstream server
 func (h *Handler) handleRequest(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) {
-	l := slog.With("ID", r.ID)
+	// Generate a trace id for this request
+	trace := uuid.New()
+
+	l := slog.With("ID", r.ID, "trace", trace)
 	startTime := time.Now()
 
 	question := r.Question[0]
@@ -40,7 +44,7 @@ func (h *Handler) handleRequest(ctx context.Context, w dns.ResponseWriter, r *dn
 	// And the client host address
 	host := strings.Split(w.RemoteAddr().String(), ":")[0]
 
-	l.Debug("Recieved request", "name", name, "from", host, "start", startTime)
+	l.Debug("Recieved request", "name", name, "from", host, "start", startTime, "questions", len(r.Question))
 
 	response := new(dns.Msg)
 	dnsutil.SetReply(response, r)
@@ -80,19 +84,22 @@ func (h *Handler) handleRequest(ctx context.Context, w dns.ResponseWriter, r *dn
 
 		// Build the response
 		if allow {
-			l.Debug("Forwarding response")
+			l.Debug("Forwarding response", "upstream", h.upstream)
 			response, err = h.forwardResp(ctx, r)
 			if err != nil {
 				l.Error("Error forwarding response", "name", name, "error", err.Error())
 				// Nothing to do here
 				return
 			}
+			l.Debug("Received response from upstream", "upstream", h.upstream, "answers", len(response.Answer))
 
 			// Update the cache (only if there is something to cache)
 			if len(response.Answer) > 0 {
 				ttl := uint32(response.Answer[0].Header().TTL)
 				l.Debug("Updating cache", "TTL", ttl)
 				h.cache.Set(cacheKey, response, ttl)
+			} else {
+				l.Debug("No answer to cache")
 			}
 
 		} else {

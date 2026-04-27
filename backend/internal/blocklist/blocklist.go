@@ -113,8 +113,8 @@ func parseBlockList(data string) []string {
 			continue
 		}
 
-		parts := strings.Split(line, " ")
-		for _, part := range parts {
+		parts := strings.SplitSeq(line, " ")
+		for part := range parts {
 			// Match ip addreses with regex
 			if ipAddrRegex.MatchString(part) {
 				continue
