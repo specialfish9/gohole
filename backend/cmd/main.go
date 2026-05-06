@@ -55,7 +55,7 @@ func main() {
 
 	dbConn, err := database.Connect(&cfg.DB, 5)
 	if err != nil {
-		logPanic(err.Error())
+		logPanic(err)
 	}
 
 	slog.Info("Connected to DB")
@@ -68,13 +68,13 @@ func main() {
 
 	domains, err := blocklist.LoadRemote(cfg.Blocking.BlocklistFile)
 	if err != nil {
-		logPanic(err.Error())
+		logPanic(err)
 	}
 
 	if cfg.Blocking.LocalBlockList.Ok {
 		localDomains, err := blocklist.LoadLocalFile(cfg.Blocking.LocalBlockList.Value)
 		if err != nil {
-			logPanic(err.Error())
+			logPanic(err)
 		}
 		domains = append(domains, localDomains...)
 	}
@@ -83,13 +83,13 @@ func main() {
 	if cfg.Blocking.LocalAllowList.Ok {
 		allowDomains, err = blocklist.LoadLocalFile(cfg.Blocking.LocalAllowList.Value)
 		if err != nil {
-			logPanic(err.Error())
+			logPanic(err)
 		}
 	}
 
 	reg, err := registry.NewRegistry(domains, allowDomains, cfg.Blocking.FilterStrategy, dbConn, cfg)
 	if err != nil {
-		logPanic(err.Error())
+		logPanic(err)
 	}
 
 	quit := make(chan os.Signal, 1)

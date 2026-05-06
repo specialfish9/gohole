@@ -55,7 +55,7 @@ func (h *Handler) handleRequest(ctx context.Context, w dns.ResponseWriter, r *dn
 	// Generate a trace id for this request
 	trace := freshTraceID()
 
-	l := slog.With("protcol", h.protocol, "ID", r.ID, "trace", trace)
+	l := slog.With("protocol", h.protocol, "ID", r.ID, "trace", trace)
 	startTime := time.Now()
 
 	// TODO handle multiple questions!
@@ -104,7 +104,7 @@ func (h *Handler) handleRequest(ctx context.Context, w dns.ResponseWriter, r *dn
 	// Write the response to the client
 	if _, err := response.WriteTo(w); err != nil {
 		// In case of error sending the response, we log it and continue
-		l.Error("Failed to write response to the client", "name", name, "host", host, "blocked", !allow)
+		l.Error("Failed to write response to the client", "name", name, "host", host, "blocked", !allow, "error", err.Error())
 	}
 
 	l.Debug("Sent response to the client", "resID", response.ID)
