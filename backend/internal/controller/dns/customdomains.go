@@ -3,28 +3,26 @@ package dns
 import (
 	"fmt"
 	"net/netip"
-	"strings"
 
 	"codeberg.org/miekg/dns"
 	"codeberg.org/miekg/dns/dnsutil"
 	"codeberg.org/miekg/dns/rdata"
 )
 
-func parseCustomDomains(customDomains []string) (map[string]netip.Addr, error) {
+func parseCustomDomains(customDomains map[string]any) (map[string]netip.Addr, error) {
 	res := make(map[string]netip.Addr)
-	for _, entry := range customDomains {
-		parts := strings.Split(entry, " ")
-		if len(parts) != 2 {
-			return nil, fmt.Errorf("expected '<name> <ip addr>', got '%s'", entry)
+	for name, addr := range customDomains {
+		addrStr, ok := addr.(string)
+		if !ok {
+			return nil, fmt.Errorf("invalid IP address for entry '%s': expected a string, got '%v' of type %T", name, addr, addr)
 		}
 
-		ip, err := netip.ParseAddr(parts[1])
+		ip, err := netip.ParseAddr(addrStr)
 		if err != nil {
-			return nil, fmt.Errorf("invalid IP address '%s' in entry '%s': %s", parts[1], entry, err)
+			return nil, fmt.Errorf("invalid IP address '%s' in entry '%s': %s", addrStr, name, err)
 		}
 
-		name := parts[0]
-		res[name] = ip
+		res[name+"."] = ip
 	}
 
 	return res, nil

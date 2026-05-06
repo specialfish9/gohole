@@ -9,11 +9,9 @@ dns:
   address: ":8053"
   upstream: "1.1.1.1"
   cache: true
-  custom_domains: "example.com 10.10.10.10"
-    - "test.com"
 
 db:
-  address: "192.168.0.3:9109"
+  address: "localhost:9000"
   user: "gohole"
   password: "password"
   name: "default"

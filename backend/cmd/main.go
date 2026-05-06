@@ -20,7 +20,7 @@ const defaultConfigPath = "./gohole.yaml"
 func logPanic(v any) {
 	msg := fmt.Sprintf("panic: %v", v)
 	slog.Error(msg)
-	fmt.Println("Bye :O")
+	fmt.Println("\nBye :O")
 	os.Exit(1)
 }
 
@@ -46,8 +46,8 @@ func main() {
 
 	cfg, err := config.New(configPath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to load config: %v", err)
-		fmt.Fprintf(os.Stderr, "Bye :O")
+		fmt.Fprintf(os.Stderr, "Failed to load config: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Bye :O\n")
 		os.Exit(1)
 	}
 

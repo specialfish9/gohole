@@ -33,12 +33,15 @@ func NewHandler(queryService query.Service, protocol Protocol, cache *Cache, cfg
 
 	customDomains := make(map[string]netip.Addr)
 	if cfg.CustomDomains.Ok {
+		slog.Debug("Parsing custom domains", "count", len(cfg.CustomDomains.Value))
 		var err error
 		customDomains, err = parseCustomDomains(cfg.CustomDomains.Value)
 		if err != nil {
 			return nil, fmt.Errorf("parsing custom domains: %w", err)
 		}
 	}
+
+	fmt.Printf("custom domains: %v\n", customDomains)
 
 	return &Handler{
 		upstream:      upstream,
@@ -65,7 +68,7 @@ func (h *Handler) handleRequest(ctx context.Context, w dns.ResponseWriter, r *dn
 	// And the client host address
 	host := strings.Split(w.RemoteAddr().String(), ":")[0]
 
-	l.Debug("Recieved request", "name", name, "from", host, "start", startTime, "questions", len(r.Question))
+	l.Debug("Recieved request", "name", name, "from", host, "questions", len(r.Question))
 
 	var response *dns.Msg
 	var allow bool
