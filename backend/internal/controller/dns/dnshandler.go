@@ -28,7 +28,7 @@ type Handler struct {
 func NewHandler(queryService query.Service, protocol Protocol, cache *Cache, cfg *Config) (*Handler, error) {
 	upstream, err := addDefaultPort(cfg.Upstream)
 	if err != nil {
-		panic(fmt.Sprintf("invalid upstream address: %v", err))
+		return nil, fmt.Errorf("dns handler: invalid upstream address: %v", err)
 	}
 
 	customDomains := make(map[string]netip.Addr)
@@ -37,7 +37,7 @@ func NewHandler(queryService query.Service, protocol Protocol, cache *Cache, cfg
 		var err error
 		customDomains, err = parseCustomDomains(cfg.CustomDomains.Value)
 		if err != nil {
-			return nil, fmt.Errorf("parsing custom domains: %w", err)
+			return nil, fmt.Errorf("dns handler: parsing custom domains: %w", err)
 		}
 	}
 
@@ -118,7 +118,7 @@ func (h *Handler) handleRequest(ctx context.Context, w dns.ResponseWriter, r *dn
 	// save the query
 	q := database.NewQuery(name, host, !allow, millis)
 	if err := h.queryService.Save(ctx, q); err != nil {
-		l.Error("Error saving blocked query", "name", name, "error", err.Error())
+		l.Error("Error saving query", "name", name, "error", err.Error())
 	}
 
 	l.Debug("Saved record in the DB")
