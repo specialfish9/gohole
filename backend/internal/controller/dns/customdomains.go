@@ -10,6 +10,12 @@ import (
 	"codeberg.org/miekg/dns/rdata"
 )
 
+func normalizeName(name string) string {
+	name = dnsutil.Fqdn(name)
+	name = strings.ToLower(name)
+	return name
+}
+
 func parseCustomDomains(customDomains map[string]any) (map[string]netip.Addr, error) {
 	res := make(map[string]netip.Addr)
 	for name, addr := range customDomains {
@@ -23,9 +29,7 @@ func parseCustomDomains(customDomains map[string]any) (map[string]netip.Addr, er
 			return nil, fmt.Errorf("invalid IP address '%s' in entry '%s': %s", addrStr, name, err)
 		}
 
-		if !strings.HasSuffix(name, ".") {
-			name += "."
-		}
+		name = normalizeName(name)
 
 		res[name] = ip
 	}
@@ -49,7 +53,7 @@ func (h *Handler) customDomainResponse(w dns.ResponseWriter, r *dns.Msg, ip neti
 	switch dns.RRToType(question) {
 	case dns.TypeA:
 		if !ip.Is4() {
-			return nil, fmt.Errorf("question is A, but IP address '%s' is not an IPv4 address", ip)
+			return nil, fmt.Errorf("question is A, but IP address '%s' is not an IPv4 address", ip.String())
 		}
 		rr := &dns.A{
 			Hdr: dns.Header{
@@ -63,7 +67,7 @@ func (h *Handler) customDomainResponse(w dns.ResponseWriter, r *dns.Msg, ip neti
 
 	case dns.TypeAAAA:
 		if !ip.Is6() {
-			return nil, fmt.Errorf("question is AAAA, but IP address '%s' is not an IPv6 address", ip)
+			return nil, fmt.Errorf("question is AAAA, but IP address '%s' is not an IPv6 address", ip.String())
 		}
 
 		rr := &dns.AAAA{

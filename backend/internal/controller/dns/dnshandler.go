@@ -8,7 +8,6 @@ import (
 	"log/slog"
 	"net"
 	"net/netip"
-	"strings"
 	"time"
 
 	"codeberg.org/miekg/dns"
@@ -62,15 +61,18 @@ func (h *Handler) handleRequest(ctx context.Context, w dns.ResponseWriter, r *dn
 	// TODO handle multiple questions!
 	question := r.Question[0]
 	// Extract the requested name
-	name := question.Header().Name
+	name := normalizeName(question.Header().Name)
 	// And the client host address
-	host := strings.Split(w.RemoteAddr().String(), ":")[0]
+	host, _, err := net.SplitHostPort(w.RemoteAddr().String())
+	if err != nil {
+		l.Error("Failed to parse client address", "error", err.Error(), "remoteAddr", w.RemoteAddr().String())
+		host = w.RemoteAddr().String()
+	}
 
 	l.Debug("Received request", "name", name, "from", host, "questions", len(r.Question))
 
 	var response *dns.Msg
 	var allow bool
-	var err error
 	var cached bool
 
 	// Check if the requested name is in the custom domains list
