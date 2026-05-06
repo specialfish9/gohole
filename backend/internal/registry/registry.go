@@ -17,8 +17,9 @@ type Registry struct {
 	QueryService    query.Service
 	QueryRouter     *http.QueryRouter
 
-	DNSHandler *dns.Handler
-	DNSCache   *dns.Cache
+	UDPDNSHandler *dns.Handler
+	TCPDNSHandler *dns.Handler
+	DNSCache      *dns.Cache
 }
 
 func NewRegistry(
@@ -37,9 +38,14 @@ func NewRegistry(
 
 	dnsCache := dns.NewCache()
 
-	dnsHandler, err := dns.NewHandler(queryService, dnsCache, &cfg.DNS)
+	tcpHandler, err := dns.NewHandler(queryService, dns.TCP, dnsCache, &cfg.DNS)
 	if err != nil {
-		return nil, fmt.Errorf("creating DNS handler: %w", err)
+		return nil, fmt.Errorf("failed to create TCP DNS handler: %w", err)
+	}
+
+	udpHandler, err := dns.NewHandler(queryService, dns.UDP, dnsCache, &cfg.DNS)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create UDP DNS handler: %w", err)
 	}
 
 	return &Registry{
@@ -47,7 +53,8 @@ func NewRegistry(
 		QueryService:    queryService,
 		QueryRouter:     http.NewQueryRouter(queryService),
 
-		DNSCache:   dnsCache,
-		DNSHandler: dnsHandler,
+		DNSCache:      dnsCache,
+		TCPDNSHandler: tcpHandler,
+		UDPDNSHandler: udpHandler,
 	}, nil
 }

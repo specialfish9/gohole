@@ -6,25 +6,32 @@ import (
 	"gohole/internal/database"
 	"gohole/internal/query"
 	"log/slog"
+	"net"
 	"net/netip"
 	"strings"
 	"time"
 
 	"codeberg.org/miekg/dns"
 	"codeberg.org/miekg/dns/dnsutil"
+	"github.com/google/uuid"
 )
 
 type Handler struct {
 	upstream      string
 	cacheEnabled  bool
 	queryService  query.Service
+	protocol      Protocol
 	customDomains map[string]netip.Addr
 	cache         *Cache
 }
 
-func NewHandler(queryService query.Service, cache *Cache, cfg *Config) (*Handler, error) {
-	customDomains := make(map[string]netip.Addr)
+func NewHandler(queryService query.Service, protocol Protocol, cache *Cache, cfg *Config) (*Handler, error) {
+	upstream, err := addDefaultPort(cfg.Upstream)
+	if err != nil {
+		panic(fmt.Sprintf("invalid upstream address: %v", err))
+	}
 
+	customDomains := make(map[string]netip.Addr)
 	if cfg.CustomDomains.Ok {
 		var err error
 		customDomains, err = parseCustomDomains(cfg.CustomDomains.Value)
@@ -34,17 +41,21 @@ func NewHandler(queryService query.Service, cache *Cache, cfg *Config) (*Handler
 	}
 
 	return &Handler{
-		upstream:      cfg.Upstream,
+		upstream:      upstream,
 		cacheEnabled:  cfg.CacheEnabled.Or(false),
 		queryService:  queryService,
-		customDomains: customDomains,
 		cache:         cache,
+		protocol:      protocol,
+		customDomains: customDomains,
 	}, nil
 }
 
 // handleRequest forwards DNS queries to the upstream server
 func (h *Handler) handleRequest(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) {
-	l := slog.With("ID", r.ID)
+	// Generate a trace id for this request
+	trace := freshTraceID()
+
+	l := slog.With("protcol", h.protocol, "ID", r.ID, "trace", trace)
 	startTime := time.Now()
 
 	// TODO handle multiple questions!
@@ -54,7 +65,7 @@ func (h *Handler) handleRequest(ctx context.Context, w dns.ResponseWriter, r *dn
 	// And the client host address
 	host := strings.Split(w.RemoteAddr().String(), ":")[0]
 
-	l.Debug("Recieved request", "name", name, "from", host, "start", startTime)
+	l.Debug("Recieved request", "name", name, "from", host, "start", startTime, "questions", len(r.Question))
 
 	var response *dns.Msg
 	var allow bool
@@ -153,19 +164,22 @@ func (h *Handler) handleRemote(ctx context.Context, name string, r *dns.Msg) (*d
 
 		// Build the response
 		if allow {
-			l.Debug("Forwarding response")
-			response, err = h.forwardReq(ctx, r)
+			l.Debug("Forwarding response", "upstream", h.upstream)
+			response, err = h.forwardResp(ctx, r, l)
 			if err != nil {
 				l.Error("Error forwarding response", "name", name, "error", err.Error())
 				// Nothing to do here
 				return nil, allow, cached, nil
 			}
+			l.Debug("Received response from upstream", "upstream", h.upstream, "answers", len(response.Answer), "truncated", response.Truncated)
 
 			// Update the cache (only if there is something to cache)
 			if len(response.Answer) > 0 {
 				ttl := uint32(response.Answer[0].Header().TTL)
 				l.Debug("Updating cache", "TTL", ttl)
 				h.cache.Set(cacheKey, response, ttl)
+			} else {
+				l.Debug("No answer to cache")
 			}
 
 		} else {
@@ -179,16 +193,43 @@ func (h *Handler) handleRemote(ctx context.Context, name string, r *dns.Msg) (*d
 	return response, allow, cached, nil
 }
 
-// forwardReq forwards the query to the `upstream` server and returns the response.
-func (h *Handler) forwardReq(ctx context.Context, r *dns.Msg) (*dns.Msg, error) {
+// forwardResp forwards the query to the `upstream` server and returns the response.
+func (h *Handler) forwardResp(ctx context.Context, r *dns.Msg, l *slog.Logger) (*dns.Msg, error) {
 	c := new(dns.Client)
 
-	resp, _, err := c.Exchange(ctx, r.Copy(), "udp", h.upstream)
+	resp, _, err := c.Exchange(ctx, r.Copy(), h.protocol, h.upstream)
 	if err != nil {
-		return nil, fmt.Errorf("failed to exchange with upstream: %w", err)
+		return nil, fmt.Errorf("failed to exchange with upstream over %s: %w", h.protocol, err)
 	}
 
 	resp.ID = r.ID
 
 	return resp, nil
+}
+
+func addDefaultPort(addr string) (string, error) {
+	_, _, err := net.SplitHostPort(addr)
+	if err == nil {
+		// port already present
+		return addr, nil
+	}
+
+	// Check it's actually a missing-port error and not a malformed address
+	ip := net.ParseIP(addr)
+	if ip == nil {
+		return "", fmt.Errorf("invalid address: %s", addr)
+	}
+
+	return net.JoinHostPort(addr, "53"), nil
+}
+
+func freshTraceID() string {
+	trace, err := uuid.NewV7()
+	if err != nil {
+		// In case of error generating the trace id, we log it and continue
+		slog.Error("Failed to generate trace ID", "error", err.Error())
+		trace = uuid.New()
+	}
+
+	return trace.String()
 }

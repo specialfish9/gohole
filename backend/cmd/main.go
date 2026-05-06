@@ -97,7 +97,8 @@ func main() {
 
 	daemons := []Daemon{
 		http.NewServer(&cfg.HTTP, reg.QueryRouter),
-		dns.NewServer(&cfg.DNS, reg.DNSHandler),
+		dns.NewServer(&cfg.DNS, reg.TCPDNSHandler),
+		dns.NewServer(&cfg.DNS, reg.UDPDNSHandler),
 	}
 
 	for _, d := range daemons {
