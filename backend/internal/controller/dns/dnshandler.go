@@ -66,7 +66,7 @@ func (h *Handler) handleRequest(ctx context.Context, w dns.ResponseWriter, r *dn
 	// And the client host address
 	host := strings.Split(w.RemoteAddr().String(), ":")[0]
 
-	l.Debug("Recieved request", "name", name, "from", host, "questions", len(r.Question))
+	l.Debug("Received request", "name", name, "from", host, "questions", len(r.Question))
 
 	var response *dns.Msg
 	var allow bool
@@ -168,9 +168,8 @@ func (h *Handler) handleRemote(ctx context.Context, name string, r *dns.Msg) (*d
 			l.Debug("Forwarding response", "upstream", h.upstream)
 			response, err = h.forwardResp(ctx, r, l)
 			if err != nil {
-				l.Error("Error forwarding response", "name", name, "error", err.Error())
 				// Nothing to do here
-				return nil, allow, cached, nil
+				return nil, allow, cached, fmt.Errorf("forwarding response: %w", err)
 			}
 			l.Debug("Received response from upstream", "upstream", h.upstream, "answers", len(response.Answer), "truncated", response.Truncated)
 

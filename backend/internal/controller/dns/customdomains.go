@@ -3,6 +3,7 @@ package dns
 import (
 	"fmt"
 	"net/netip"
+	"strings"
 
 	"codeberg.org/miekg/dns"
 	"codeberg.org/miekg/dns/dnsutil"
@@ -22,7 +23,11 @@ func parseCustomDomains(customDomains map[string]any) (map[string]netip.Addr, er
 			return nil, fmt.Errorf("invalid IP address '%s' in entry '%s': %s", addrStr, name, err)
 		}
 
-		res[name+"."] = ip
+		if !strings.HasSuffix(name, ".") {
+			name += "."
+		}
+
+		res[name] = ip
 	}
 
 	return res, nil
@@ -32,6 +37,11 @@ func (h *Handler) customDomainResponse(w dns.ResponseWriter, r *dns.Msg, ip neti
 	response := new(dns.Msg)
 	dnsutil.SetReply(response, r)
 	response.Authoritative = true
+
+	if len(r.Question) == 0 {
+		response.Rcode = dns.RcodeFormatError
+		return response, nil
+	}
 
 	// TODO handle multiple questions!
 	question := r.Question[0]

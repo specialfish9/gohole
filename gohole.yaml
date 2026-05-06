@@ -16,7 +16,7 @@ dns:
   # Enable DNS caching for faster responses
   cache: true 
   # Optional: list of custom domains to resolve
-  local_domains:
+  custom_domains:
     "foo.bar": "10.10.10.10"
 
 # Database connection settings for query storage
