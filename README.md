@@ -11,7 +11,7 @@ exposed through a web dashboard.
 - DNS-based ad & tracker blocking
 - Super-duper easy to set up and use, with a user-friendly web dashboard
 - Configurable blocklists and allowlists in the same format as Pi-hole
-- Custom upstream DNS server
+- Resolve custom domains to specific IPs
 - High-performance query logging (ClickHouse)
 - Web dashboard for analytics and monitoring + Grafana support
 - Docker and Docker Compose support

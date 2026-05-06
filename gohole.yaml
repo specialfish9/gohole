@@ -15,21 +15,33 @@ dns:
   upstream: "1.1.1.1:53"
   # Enable DNS caching for faster responses
   cache: true 
+  # Optional: list of custom domains to resolve
+  local_domains:
+    "foo.bar": "10.10.10.10"
 
+# Database connection settings for query storage
 db:
+  # Database address in the format "host:port"
   address: "clickhouse:9000"
+  # Database user username
   user: "gohole"
+  # Database user password 
   password: "password"
+  # Database name to use
   name: "default"
+  # Enable or disable database query logging
   debug: false
 
 blocking:
   # Blocking strategy: basic | trie | trie2 
   # Note that the trie-based strategies are experimental
   filter_strategy: "basic"         
+
   # File containing remote blocklist URLs, one per line
   blocklist_file: "block.txt"      
+
   # Optional: local file with additional domains to block
   # local_blocklist: "localblock.txt"   
+  
   # Optional: local file with domains to always allow
   # local_allowlist: "localallow.txt"   
