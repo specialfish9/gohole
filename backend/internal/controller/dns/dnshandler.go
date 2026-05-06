@@ -41,8 +41,6 @@ func NewHandler(queryService query.Service, protocol Protocol, cache *Cache, cfg
 		}
 	}
 
-	fmt.Printf("custom domains: %v\n", customDomains)
-
 	return &Handler{
 		upstream:      upstream,
 		cacheEnabled:  cfg.CacheEnabled.Or(false),
