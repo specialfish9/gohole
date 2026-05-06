@@ -20,7 +20,7 @@ const defaultConfigPath = "./gohole.yaml"
 func logPanic(v any) {
 	msg := fmt.Sprintf("panic: %v", v)
 	slog.Error(msg)
-	fmt.Println("Bye :O")
+	fmt.Println("\nBye :O")
 	os.Exit(1)
 }
 
@@ -46,8 +46,8 @@ func main() {
 
 	cfg, err := config.New(configPath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to load config: %v", err)
-		fmt.Fprintf(os.Stderr, "Bye :O")
+		fmt.Fprintf(os.Stderr, "Failed to load config: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Bye :O\n")
 		os.Exit(1)
 	}
 
@@ -55,7 +55,7 @@ func main() {
 
 	dbConn, err := database.Connect(&cfg.DB, 5)
 	if err != nil {
-		logPanic(err.Error())
+		logPanic(err)
 	}
 
 	slog.Info("Connected to DB")
@@ -68,13 +68,13 @@ func main() {
 
 	domains, err := blocklist.LoadRemote(cfg.Blocking.BlocklistFile)
 	if err != nil {
-		logPanic(err.Error())
+		logPanic(err)
 	}
 
 	if cfg.Blocking.LocalBlockList.Ok {
 		localDomains, err := blocklist.LoadLocalFile(cfg.Blocking.LocalBlockList.Value)
 		if err != nil {
-			logPanic(err.Error())
+			logPanic(err)
 		}
 		domains = append(domains, localDomains...)
 	}
@@ -83,11 +83,14 @@ func main() {
 	if cfg.Blocking.LocalAllowList.Ok {
 		allowDomains, err = blocklist.LoadLocalFile(cfg.Blocking.LocalAllowList.Value)
 		if err != nil {
-			logPanic(err.Error())
+			logPanic(err)
 		}
 	}
 
-	reg := registry.NewRegistry(domains, allowDomains, cfg.Blocking.FilterStrategy, dbConn, cfg)
+	reg, err := registry.NewRegistry(domains, allowDomains, cfg.Blocking.FilterStrategy, dbConn, cfg)
+	if err != nil {
+		logPanic(err)
+	}
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM) // SIGINT, SIGTERM

@@ -1,6 +1,7 @@
 package registry
 
 import (
+	"fmt"
 	"gohole/config"
 	"gohole/internal/controller/dns"
 	"gohole/internal/controller/http"
@@ -27,7 +28,7 @@ func NewRegistry(
 	filterStrategy filter.Strategy,
 	conn driver.Conn,
 	cfg *config.Config,
-) *Registry {
+) (*Registry, error) {
 	blockFilter := filter.NewFilter(filterStrategy, blockedDomains)
 	allowFilter := filter.NewFilter(filterStrategy, allowedDomains)
 
@@ -37,13 +38,23 @@ func NewRegistry(
 
 	dnsCache := dns.NewCache()
 
+	tcpHandler, err := dns.NewHandler(queryService, dns.TCP, dnsCache, &cfg.DNS)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create TCP DNS handler: %w", err)
+	}
+
+	udpHandler, err := dns.NewHandler(queryService, dns.UDP, dnsCache, &cfg.DNS)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create UDP DNS handler: %w", err)
+	}
+
 	return &Registry{
 		QueryRepository: repo,
 		QueryService:    queryService,
 		QueryRouter:     http.NewQueryRouter(queryService),
 
 		DNSCache:      dnsCache,
-		TCPDNSHandler: dns.NewHandler(queryService, dns.TCP, dnsCache, &cfg.DNS),
-		UDPDNSHandler: dns.NewHandler(queryService, dns.UDP, dnsCache, &cfg.DNS),
-	}
+		TCPDNSHandler: tcpHandler,
+		UDPDNSHandler: udpHandler,
+	}, nil
 }
