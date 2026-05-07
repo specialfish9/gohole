@@ -6,15 +6,16 @@ http:
   serve_frontend: true
 
 dns:
-  address: ":8053"
+  address: ":8054"
   upstream: "1.1.1.1"
   cache: true
 
 db:
-  address: "localhost:9000"
+  type: "postgres"
+  address: "localhost:5432"
   user: "gohole"
   password: "password"
-  name: "default"
+  name: "gohole"
   debug: false
 
 blocking:

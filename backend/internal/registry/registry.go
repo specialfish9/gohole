@@ -8,8 +8,6 @@ import (
 	"gohole/internal/database"
 	"gohole/internal/filter"
 	"gohole/internal/query"
-
-	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 )
 
 type Registry struct {
@@ -26,13 +24,13 @@ func NewRegistry(
 	blockedDomains []string,
 	allowedDomains []string,
 	filterStrategy filter.Strategy,
-	conn driver.Conn,
+	db database.Manager,
 	cfg *config.Config,
 ) (*Registry, error) {
 	blockFilter := filter.NewFilter(filterStrategy, blockedDomains)
 	allowFilter := filter.NewFilter(filterStrategy, allowedDomains)
 
-	repo := database.NewRepository(conn)
+	repo := db.Repository()
 
 	queryService := query.NewService(blockFilter, allowFilter, repo)
 
