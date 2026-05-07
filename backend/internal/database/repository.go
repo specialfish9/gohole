@@ -23,35 +23,147 @@ type Repository interface {
 	FindDomainStats(ctx context.Context, since time.Time) (DomainStats, error)
 	FindTopDomains(ctx context.Context, blocked bool, since time.Time, limit int) ([]TopDomain, error)
 	FindDomainDetailsPoints(ctx context.Context, name string, since time.Time, granularity time.Duration) ([]Point, error)
+	// Close flushes any buffered writes and stops the background batch worker.
+	// Call this on application shutdown.
+	Close() error
 }
+
+const (
+	batchSize       = 1000
+	batchInterval   = 5 * time.Second
+	flushRetryDelay = 1 * time.Second
+	flushMaxRetries = 3
+)
 
 type repositoryImpl struct {
-	conn driver.Conn
+	conn    driver.Conn
+	queue   chan Query
+	done    chan struct{}
+	stopped chan struct{}
 }
 
+// NewRepository creates a Repository backed by a ClickHouse connection.
+// It starts a background goroutine that flushes buffered inserts every
+// batchSize items or batchInterval, whichever comes first.
+// Call Close() on shutdown to flush remaining items and stop the worker.
 func NewRepository(conn driver.Conn) Repository {
-	return &repositoryImpl{
-		conn: conn,
+	r := &repositoryImpl{
+		conn:    conn,
+		queue:   make(chan Query, batchSize*2), // buffer avoids blocking callers
+		done:    make(chan struct{}),
+		stopped: make(chan struct{}),
+	}
+	go r.batchWorker()
+	return r
+}
+
+// SaveQuery enqueues a query for batched insertion.
+// It returns immediately; the actual insert happens in the background worker.
+func (r *repositoryImpl) SaveQuery(_ context.Context, q Query) error {
+	select {
+	case r.queue <- q:
+		return nil
+	case <-r.stopped:
+		return fmt.Errorf("repository: already closed")
 	}
 }
 
-func (r *repositoryImpl) SaveQuery(ctx context.Context, q Query) error {
-	err := r.conn.Exec(ctx, `
-    INSERT INTO query (name, type, blocked, host, timestamp, millis)
-    VALUES (?, ?, ?, ?, ?, ?)
-    `,
-		q.Name,
-		uint16(0), // TODO
-		q.Blocked,
-		q.Host,
-		time.Unix(q.Timestamp, 0), // Convert int64 to time.Time
-		q.Millis,
-	)
+// Close signals the batch worker to stop, waits for it to flush remaining
+// items, then returns.
+func (r *repositoryImpl) Close() error {
+	close(r.done)
+	<-r.stopped // wait until the worker has finished flushing
+	return nil
+}
 
-	if err != nil {
-		return fmt.Errorf("repository: cannot save query: %w", err)
+// batchWorker runs in a goroutine and flushes the queue whenever 1000 items
+// accumulate or 5 seconds elapse.
+func (r *repositoryImpl) batchWorker() {
+	defer close(r.stopped)
+
+	ticker := time.NewTicker(batchInterval)
+	defer ticker.Stop()
+
+	batch := make([]Query, 0, batchSize)
+
+	flush := func() {
+		if len(batch) == 0 {
+			return
+		}
+		for i := range flushMaxRetries {
+			if err := r.flushBatch(batch); err != nil {
+				slog.Error("batch flush failed", "error", err, "attempt", fmt.Sprintf("%d/%d", i, flushMaxRetries), "count", len(batch))
+				if i == flushMaxRetries-1 {
+					slog.Error("max flush retries reached, dropping batch", "count", len(batch))
+					break
+				}
+				time.Sleep(flushRetryDelay)
+			} else {
+				break
+			}
+		}
+		batch = batch[:0]
 	}
 
+	for {
+		select {
+		case q := <-r.queue:
+			batch = append(batch, q)
+			if len(batch) >= batchSize {
+				flush()
+			}
+
+		case <-ticker.C:
+			flush()
+
+		case <-r.done:
+			// Drain any remaining items in the channel before exiting.
+			for {
+				select {
+				case q, ok := <-r.queue:
+					if !ok {
+						flush()
+						return
+					}
+					batch = append(batch, q)
+				default:
+					flush()
+					return
+				}
+			}
+		}
+	}
+}
+
+// flushBatch inserts a slice of queries in a single ClickHouse batch.
+func (r *repositoryImpl) flushBatch(queries []Query) error {
+	ctx := context.Background()
+
+	b, err := r.conn.PrepareBatch(ctx, `
+		INSERT INTO query (name, type, blocked, host, timestamp, millis)
+	`)
+	if err != nil {
+		return fmt.Errorf("repository: prepare batch: %w", err)
+	}
+
+	for _, q := range queries {
+		if err := b.Append(
+			q.Name,
+			uint16(0), // TODO
+			q.Blocked,
+			q.Host,
+			time.Unix(q.Timestamp, 0),
+			q.Millis,
+		); err != nil {
+			return fmt.Errorf("repository: append to batch: %w", err)
+		}
+	}
+
+	if err := b.Send(); err != nil {
+		return fmt.Errorf("repository: send batch: %w", err)
+	}
+
+	slog.Debug("batch flushed", "count", len(queries))
 	return nil
 }
 
