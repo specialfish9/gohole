@@ -5,7 +5,7 @@ WORKDIR /app
 
 COPY ./frontend/package*.json ./
 
-RUN npm install
+RUN npm ci
 
 COPY ./frontend/ .
 
@@ -20,7 +20,12 @@ COPY ./backend/ ./
 
 RUN go get -d -v ./...
 
-RUN CGO_ENABLED=0 go build -o /bin/app ./cmd/
+ARG TARGETOS
+ARG TARGETARCH
+
+RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
+    go build -trimpath -ldflags="-s -w" \
+    -o /bin/app ./cmd/
 
 # Run
 FROM gcr.io/distroless/static
