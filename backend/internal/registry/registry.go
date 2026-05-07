@@ -58,3 +58,10 @@ func NewRegistry(
 		UDPDNSHandler: udpHandler,
 	}, nil
 }
+
+func (r *Registry) Close() error {
+	if err := r.QueryRepository.Close(); err != nil {
+		return fmt.Errorf("failed to close repository: %w", err)
+	}
+	return nil
+}

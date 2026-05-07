@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"gohole/config"
 	"gohole/internal/blocklist"
@@ -91,6 +92,17 @@ func main() {
 	if err != nil {
 		logPanic(err)
 	}
+
+	// Close stuff on exit
+	defer func() {
+		err := errors.Join(
+			reg.Close(),
+			dbConn.Close(),
+		)
+		if err != nil {
+			logPanic(fmt.Sprintf("closing: %v", err))
+		}
+	}()
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM) // SIGINT, SIGTERM
