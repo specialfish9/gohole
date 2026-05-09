@@ -21,6 +21,10 @@ dns:
 
 # Database connection settings for query storage
 db:
+  # Type of database to use: none | clickhouse | postgres.
+  # "none" disables database storage, hence all the other settings 
+  # are ignored.
+  type: "clickhouse"
   # Database address in the format "host:port"
   address: "clickhouse:9000"
   # Database user username

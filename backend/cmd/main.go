@@ -9,6 +9,8 @@ import (
 	"gohole/internal/controller/dns"
 	"gohole/internal/controller/http"
 	"gohole/internal/database"
+	"gohole/internal/database/clickhouse"
+	"gohole/internal/database/pg"
 	"gohole/internal/registry"
 	"log/slog"
 	"os"
@@ -30,6 +32,36 @@ func initLogger(cfg *config.Config) {
 		Level: config.NewLeveler(cfg.App.LogLevel),
 	})
 	slog.SetDefault(slog.New(handler))
+}
+
+func initDatabase(ctx context.Context, cfg *config.Config) (database.Manager, error) {
+	var dbManager database.Manager
+
+	switch cfg.DB.Type {
+	case database.TypeClickHouse:
+		dbManager = clickhouse.NewManager(&cfg.DB)
+	case database.TypePostgres:
+		dbManager = pg.NewManager(&cfg.DB)
+	case database.TypeNone:
+		slog.Info("Database storage is disabled (type: none)")
+		return database.NewNoOpManager(), nil
+	default:
+		return nil, fmt.Errorf("unsupported database type: %s", cfg.DB.Type)
+	}
+
+	if err := database.Connect(ctx, dbManager, &cfg.DB, 5); err != nil {
+		return nil, fmt.Errorf("failed to connect to database: %w", err)
+	}
+
+	slog.Info("Connected to DB")
+
+	if err := dbManager.Init(ctx); err != nil {
+		return nil, fmt.Errorf("failed to initialize database: %w", err)
+	}
+
+	slog.Info("Initialized DB")
+
+	return dbManager, nil
 }
 
 func main() {
@@ -54,18 +86,10 @@ func main() {
 
 	initLogger(cfg)
 
-	dbConn, err := database.Connect(&cfg.DB, 5)
+	db, err := initDatabase(context.Background(), cfg)
 	if err != nil {
 		logPanic(err)
 	}
-
-	slog.Info("Connected to DB")
-
-	if err := database.Init(context.Background(), dbConn); err != nil {
-		slog.Error(err.Error())
-	}
-
-	slog.Info("Created tables")
 
 	domains, err := blocklist.LoadRemote(cfg.Blocking.BlocklistFile)
 	if err != nil {
@@ -88,7 +112,7 @@ func main() {
 		}
 	}
 
-	reg, err := registry.NewRegistry(domains, allowDomains, cfg.Blocking.FilterStrategy, dbConn, cfg)
+	reg, err := registry.NewRegistry(domains, allowDomains, cfg.Blocking.FilterStrategy, db, cfg)
 	if err != nil {
 		logPanic(err)
 	}
@@ -97,7 +121,7 @@ func main() {
 	defer func() {
 		err := errors.Join(
 			reg.Close(),
-			dbConn.Close(),
+			reg.QueryRepository.Close(),
 		)
 		if err != nil {
 			logPanic(fmt.Sprintf("closing: %v", err))
