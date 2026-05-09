@@ -42,6 +42,9 @@ func initDatabase(ctx context.Context, cfg *config.Config) (database.Manager, er
 		dbManager = clickhouse.NewManager(&cfg.DB)
 	case database.TypePostgres:
 		dbManager = pg.NewManager(&cfg.DB)
+	case database.TypeNone:
+		slog.Info("Database storage is disabled (type: none)")
+		return database.NewNoOpManager(), nil
 	default:
 		return nil, fmt.Errorf("unsupported database type: %s", cfg.DB.Type)
 	}

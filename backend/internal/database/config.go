@@ -7,11 +7,12 @@ type Type = string
 const (
 	TypeClickHouse Type = "clickhouse"
 	TypePostgres   Type = "postgres"
+	TypeNone       Type = "none"
 )
 
 type Config struct {
-	// Type is the type of the database (e.g., "clickhouse", "postgres").
-	Type Type `confuso:"type" validate:"required,oneof=clickhouse postgres"`
+	// Type is the type of the database (e.g., "clickhouse", "postgres"). Use "none" to disable database storage.
+	Type Type `confuso:"type" validate:"required,oneof=clickhouse postgres none"`
 	// Address is the address of the database.
 	Address string `confuso:"address" validate:"required"`
 	// User is the username for the database.

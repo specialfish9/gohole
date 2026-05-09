@@ -11,7 +11,7 @@ dns:
   cache: true
 
 db:
-  type: "postgres"
+  type: "none"
   address: "localhost:5432"
   user: "gohole"
   password: "password"
