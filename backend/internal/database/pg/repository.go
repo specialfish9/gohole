@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 	"gohole/internal/database"
-	"log/slog"
 	"time"
+
+	"github.com/jackc/pgx/v5"
 )
 
 type repositoryImpl struct {
@@ -75,15 +76,9 @@ func (r *repositoryImpl) FindAllLimit(ctx context.Context, limit int, name strin
 	}
 	defer rows.Close()
 
-	var res []database.Query
-
-	for rows.Next() {
-		var q database.Query
-		if err := rows.Scan(&q.Name, &q.Type, &q.Host, &q.Blocked, &q.Timestamp, &q.Millis); err != nil {
-			slog.Error("scan failed", "error", err)
-			continue
-		}
-		res = append(res, q)
+	res, err := pgx.CollectRows(rows, pgx.RowToStructByName[database.Query])
+	if err != nil {
+		return nil, err
 	}
 
 	return res, nil
@@ -101,15 +96,9 @@ func (r *repositoryImpl) FindAllByInterval(ctx context.Context, since time.Time)
 	}
 	defer rows.Close()
 
-	var res []database.Query
-
-	for rows.Next() {
-		var q database.Query
-		if err := rows.Scan(&q.Name, &q.Type, &q.Blocked, &q.Timestamp); err != nil {
-			slog.Error("scan failed", "error", err)
-			continue
-		}
-		res = append(res, q)
+	res, err := pgx.CollectRows(rows, pgx.RowToStructByName[database.Query])
+	if err != nil {
+		return nil, err
 	}
 
 	return res, nil
@@ -132,15 +121,9 @@ func (r *repositoryImpl) FindHostStats(ctx context.Context, since time.Time) ([]
 	}
 	defer rows.Close()
 
-	var stats []database.HostStat
-
-	for rows.Next() {
-		var s database.HostStat
-		if err := rows.Scan(&s.Host, &s.QueryCount, &s.BlockedCount, &s.BlockRate); err != nil {
-			slog.Error("scan failed", "error", err)
-			continue
-		}
-		stats = append(stats, s)
+	stats, err := pgx.CollectRows(rows, pgx.RowToStructByName[database.HostStat])
+	if err != nil {
+		return nil, err
 	}
 
 	return stats, nil
@@ -174,15 +157,9 @@ func (r *repositoryImpl) FindTopDomains(ctx context.Context, blocked bool, since
 	}
 	defer rows.Close()
 
-	var res []database.TopDomain
-
-	for rows.Next() {
-		var d database.TopDomain
-		if err := rows.Scan(&d.Domain, &d.Count); err != nil {
-			slog.Error("scan failed", "error", err)
-			continue
-		}
-		res = append(res, d)
+	res, err := pgx.CollectRows(rows, pgx.RowToStructByName[database.TopDomain])
+	if err != nil {
+		return nil, err
 	}
 
 	return res, nil
@@ -222,15 +199,9 @@ func (r *repositoryImpl) FindDomainDetailsPoints(
 	}
 	defer rows.Close()
 
-	var res []database.Point
-
-	for rows.Next() {
-		var p database.Point
-		if err := rows.Scan(&p.Time, &p.Count); err != nil {
-			slog.Error("scan failed", "error", err)
-			continue
-		}
-		res = append(res, p)
+	res, err := pgx.CollectRows(rows, pgx.RowToStructByName[database.Point])
+	if err != nil {
+		return nil, err
 	}
 
 	return res, nil
