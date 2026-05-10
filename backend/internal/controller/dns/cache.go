@@ -13,8 +13,7 @@ type CacheKey struct {
 	Class uint16
 }
 
-func NewCacheKey(msg *dns.Msg) CacheKey {
-	question := msg.Question[0]
+func NewCacheKey(question dns.RR) CacheKey {
 	return CacheKey{
 		Name:  question.Header().Name,
 		Type:  dns.RRToType(question),
@@ -23,7 +22,7 @@ func NewCacheKey(msg *dns.Msg) CacheKey {
 }
 
 type CacheEntry struct {
-	Answer     []dns.RR
+	Answer     dns.RR
 	Expiration time.Time
 	allowed    bool
 }
@@ -43,7 +42,7 @@ func NewCache() *Cache {
 // It returns a boolean indicating whether the entry
 // should be allowed, the cached message, and a boolean
 // indicating if the entry was found.
-func (c *Cache) Get(key CacheKey) (bool, []dns.RR, bool) {
+func (c *Cache) Get(key CacheKey) (bool, dns.RR, bool) {
 	c.mu.RLock()
 	entry, ok := c.items[key]
 	c.mu.RUnlock()
@@ -71,22 +70,21 @@ func (c *Cache) Get(key CacheKey) (bool, []dns.RR, bool) {
 	return entry.allowed, entry.Answer, true
 }
 
-func (c *Cache) SetBlocked(key CacheKey, msg *dns.Msg) {
+func (c *Cache) SetBlocked(key CacheKey) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	c.items[key] = &CacheEntry{
 		allowed: false,
-		Answer:  msg.Answer,
 	}
 }
 
-func (c *Cache) Set(key CacheKey, msg *dns.Msg, ttl uint32) {
+func (c *Cache) Set(key CacheKey, answer dns.RR, ttl uint32) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	c.items[key] = &CacheEntry{
-		Answer:     msg.Answer,
+		Answer:     answer,
 		Expiration: time.Now().Add(time.Duration(ttl) * time.Second),
 		allowed:    true,
 	}

@@ -3,12 +3,10 @@ package dns
 import (
 	"context"
 	"fmt"
-	"gohole/internal/database"
 	"gohole/internal/query"
 	"log/slog"
 	"net"
 	"net/netip"
-	"time"
 
 	"codeberg.org/miekg/dns"
 	"codeberg.org/miekg/dns/dnsutil"
@@ -51,152 +49,119 @@ func NewHandler(queryService query.Service, protocol Protocol, cache *Cache, cfg
 }
 
 // handleRequest forwards DNS queries to the upstream server
-func (h *Handler) handleRequest(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) {
-	// Generate a trace id for this request
-	trace := freshTraceID()
+func (h *Handler) handleRequest(rc *ReqCtx, w dns.ResponseWriter, r *dns.Msg) {
+	rc.Logger.Debug("Handling DNS request", "from", rc.Host)
 
-	l := slog.With("protocol", h.protocol, "ID", r.ID, "trace", trace)
-	startTime := time.Now()
+	// We only answer the first question
+	if len(r.Question) > 1 {
+		rc.Logger.Warn("reqeust has more than one question", "questions", len(r.Question))
+	}
 
-	// TODO handle multiple questions!
 	question := r.Question[0]
-	// Extract the requested name
-	name := normalizeName(question.Header().Name)
-	// And the client host address
-	host, _, err := net.SplitHostPort(w.RemoteAddr().String())
-	if err != nil {
-		l.Error("Failed to parse client address", "error", err.Error(), "remoteAddr", w.RemoteAddr().String())
-		host = w.RemoteAddr().String()
-	}
-
-	l.Debug("Received request", "name", name, "from", host, "questions", len(r.Question))
-
 	var response *dns.Msg
-	var allow bool
-	var cached bool
 
-	// Check if the requested name is in the custom domains list
-	ip, local := h.customDomains[name]
-	if local {
-		l.Debug("Name is in custom domains list, generating response", "name", name, "ip", ip)
+	// Extract the requested name
+	rc.Name = normalizeName(question.Header().Name)
 
-		response, err = h.customDomainResponse(w, r, ip)
-		if err != nil {
-			l.Error("Error generating custom domain response", "name", name, "error", err.Error())
-
-			// Nothing to do here, we will just return an empty response
-			response = new(dns.Msg)
-			dnsutil.SetReply(response, r)
-		}
-		allow = true
+	allow, answer, err := h.tryAnswerQuestion(rc, question)
+	if err != nil {
+		// In case of error, return an error response
+		rc.Error = fmt.Errorf("dns handler: error trying answer question: %w", err)
+		response = blockedResponse(r)
+	} else if answer != nil {
+		response = responseFromAnswer(answer, r)
+	} else if !allow {
+		// Else, if the domain is blocked, then return a refused response
+		response = blockedResponse(r)
 	} else {
-		response, allow, cached, err = h.handleRemote(ctx, name, r)
+		// Else, if the domain is allowed, forward the request to the upstream
+		response, err = h.forwardRequest(rc, r)
 		if err != nil {
-			l.Error("Error handling remote request", "name", name, "error", err.Error())
-
-			// In case of errors when handling the remote request, we still want to answer a client
-			response = new(dns.Msg)
-			dnsutil.SetReply(response, r)
-			allow = true
+			// In case of error, return an error response
+			rc.Error = fmt.Errorf("dns handler: error forwarding request to upstream: %w", err)
+			response = blockedResponse(r)
 		}
 	}
 
-	// Write the response to the client
 	if _, err := response.WriteTo(w); err != nil {
-		// In case of error sending the response, we log it and continue
-		l.Error("Failed to write response to the client", "name", name, "host", host, "blocked", !allow, "error", err.Error())
-	}
-
-	l.Debug("Sent response to the client", "resID", response.ID)
-
-	millis := time.Since(startTime).Milliseconds()
-
-	if allow {
-		l.Info("PASS", "name", name, "host", host, "durationMS", millis, "cached", cached, "local", local)
+		rc.Error = fmt.Errorf("dns handler: error writing response to client: %w", err)
 	} else {
-		l.Info("SMASH", "name", name, "host", host, "durationMS", millis, "cached", cached)
+		rc.Logger.Debug("Sent response to client", "from", rc.Host)
 	}
-
-	// save the query
-	q := database.NewQuery(name, host, !allow, millis)
-	if err := h.queryService.Save(ctx, q); err != nil {
-		l.Error("Error saving query", "name", name, "error", err.Error())
-	}
-
-	l.Debug("Saved record in the DB")
 }
 
-func (h *Handler) handleRemote(ctx context.Context, name string, r *dns.Msg) (*dns.Msg, bool, bool, error) {
-	l := slog.With("ID", r.ID)
+func (h *Handler) tryAnswerQuestion(rc *ReqCtx, q dns.RR) (bool, dns.RR, error) {
+	rc.Logger.Debug("Answering question", "name", rc.Name)
 
-	response := new(dns.Msg)
-	dnsutil.SetReply(response, r)
+	// First, check custom domains
+	resp, err := h.checkCustomDomains(rc, q)
+	if err != nil {
+		return false, nil, err
+	}
+	if resp != nil {
+		// Custom domains are always allowed by definition
+		return true, resp, nil
+	}
 
-	var allow bool
-	var err error
-
-	// First, check the cache
-	var cached bool // cached false by default
-	cacheKey := NewCacheKey(r)
-
+	// Second, check cache
 	if h.cacheEnabled {
-		var answer []dns.RR
-		allow, answer, cached = h.cache.Get(cacheKey)
-		l.Debug("Performed cache lookup", "hit", cached, "allow", allow)
-
-		if cached {
-			// Copy the ID of the request
-			if allow {
-				response.Answer = answer
-			} else {
-				response.Rcode = dns.RcodeRefused
-			}
-		}
-	}
-
-	if !cached {
-		allow, err = h.queryService.ShouldAllow(name)
+		allowed, resp, err := h.checkCache(rc, q)
 		if err != nil {
-			l.Error("Filtering", "name", name, "error", err.Error())
-
-			// In case of errors when filtering, we still want to answer a client
-			allow = true
+			return false, nil, err
 		}
-
-		l.Debug("Filtering result", "allow", allow)
-
-		// Build the response
-		if allow {
-			l.Debug("Forwarding response", "upstream", h.upstream)
-			response, err = h.forwardResp(ctx, r, l)
-			if err != nil {
-				// Nothing to do here
-				return nil, allow, cached, fmt.Errorf("forwarding response: %w", err)
-			}
-			l.Debug("Received response from upstream", "upstream", h.upstream, "answers", len(response.Answer), "truncated", response.Truncated)
-
-			// Update the cache (only if there is something to cache)
-			if len(response.Answer) > 0 {
-				ttl := uint32(response.Answer[0].Header().TTL)
-				l.Debug("Updating cache", "TTL", ttl)
-				h.cache.Set(cacheKey, response, ttl)
-			} else {
-				l.Debug("No answer to cache")
-			}
-
-		} else {
-			l.Debug("Setting response Rcode to refused")
-			response.Rcode = dns.RcodeRefused
-			l.Debug("Updating cache")
-			h.cache.SetBlocked(cacheKey, response)
+		if resp != nil {
+			return allowed, resp, nil
 		}
 	}
 
-	return response, allow, cached, nil
+	// Third, check filter
+	allowed, err := h.checkFilter(rc, q)
+	if err != nil {
+		return false, nil, err
+	}
+
+	return allowed, nil, nil
 }
 
-// forwardResp forwards the query to the `upstream` server and returns the response.
-func (h *Handler) forwardResp(ctx context.Context, r *dns.Msg, l *slog.Logger) (*dns.Msg, error) {
+func (h *Handler) checkCache(rc *ReqCtx, q dns.RR) (bool, dns.RR, error) {
+	key := NewCacheKey(q)
+	rc.Logger.Debug("Performing cache lookup", "key", key)
+	allow, answer, cached := h.cache.Get(key)
+	if !cached {
+		rc.Logger.Debug("Cache miss", "key", key)
+		return false, nil, nil
+	}
+
+	rc.Logger.Debug("Cache hit", "key", key)
+
+	rc.Cached = true
+
+	return allow, answer, nil
+}
+
+func (h *Handler) checkFilter(rc *ReqCtx, q dns.RR) (bool, error) {
+	rc.Logger.Debug("Checking filter", "name", rc.Name)
+	allow, err := h.queryService.ShouldAllow(rc.Name)
+	if err != nil {
+		return false, fmt.Errorf("filtering query: %w", err)
+	}
+
+	rc.Logger.Debug("Filter result", "name", rc.Name, "allow", allow)
+
+	if !allow {
+		// Update the cache
+		rc.Logger.Debug("Updating cache with new blocked entry", "name", rc.Name)
+		cacheKey := NewCacheKey(q)
+		h.cache.SetBlocked(cacheKey)
+	}
+
+	rc.Allowed = allow
+
+	return allow, nil
+}
+
+// forward forwards the query to the `upstream` server and returns the response.
+func (h *Handler) forward(ctx context.Context, r *dns.Msg) (*dns.Msg, error) {
 	c := new(dns.Client)
 
 	resp, _, err := c.Exchange(ctx, r.Copy(), h.protocol, h.upstream)
@@ -234,4 +199,40 @@ func freshTraceID() string {
 	}
 
 	return trace.String()
+}
+
+// forwardRequest forwards the request to the upstream and updates the handler cache.
+func (h *Handler) forwardRequest(rc *ReqCtx, r *dns.Msg) (*dns.Msg, error) {
+	rc.Logger.Debug("Forwarding request to upstream", "name", rc.Name, "upstream", h.upstream)
+	response, err := h.forward(rc.Context, r)
+	if err != nil {
+		return nil, err
+	}
+
+	// Update the cache (only if there is something to cache)
+	if len(response.Answer) > 0 {
+		answer := response.Answer[0]
+		ttl := answer.Header().TTL
+		cacheKey := NewCacheKey(answer)
+		rc.Logger.Debug("Updating cache", "key", cacheKey, "TTL", ttl)
+		h.cache.Set(cacheKey, answer, ttl)
+	} else {
+		rc.Logger.Debug("No answer to cache", "name", rc.Name)
+	}
+
+	return responseFromAnswer(response.Answer[0], r), nil
+}
+
+func responseFromAnswer(a dns.RR, req *dns.Msg) *dns.Msg {
+	resp := new(dns.Msg)
+	dnsutil.SetReply(resp, req)
+	resp.Answer = []dns.RR{a}
+	return resp
+}
+
+func blockedResponse(req *dns.Msg) *dns.Msg {
+	resp := new(dns.Msg)
+	dnsutil.SetReply(resp, req)
+	resp.Rcode = dns.RcodeNameError
+	return resp
 }
