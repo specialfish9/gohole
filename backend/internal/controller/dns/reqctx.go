@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net"
 	"slices"
+	"sync"
 	"time"
 
 	"codeberg.org/miekg/dns"
@@ -26,6 +27,26 @@ type ReqCtx struct {
 	Error   error
 }
 
+func (r *ReqCtx) Free() {
+	r.Context = nil
+	r.Logger = nil
+	r.Trace = ""
+	r.Start = time.Time{}
+	r.End = time.Time{}
+	r.Name = ""
+	r.Host = ""
+	r.Allowed = false
+	r.Cached = false
+	r.Custom = false
+	r.Error = nil
+}
+
+var ctxPool = sync.Pool{
+	New: func() any {
+		return &ReqCtx{}
+	},
+}
+
 // applyMiddlewares initializes the request context and builds the middleware chain
 func applyMiddlewares(handler handlerFunc, middlewares ...middleware) dns.HandlerFunc {
 	return func(ctx context.Context, w dns.ResponseWriter, msg *dns.Msg) {
@@ -38,12 +59,11 @@ func applyMiddlewares(handler handlerFunc, middlewares ...middleware) dns.Handle
 			host = w.RemoteAddr().String()
 		}
 
-		rc := &ReqCtx{
-			Context: ctx,
-			Logger:  l,
-			Host:    host,
-			Trace:   trace,
-		}
+		rc := ctxPool.Get().(*ReqCtx)
+		rc.Context = ctx
+		rc.Host = host
+		rc.Trace = trace
+		rc.Logger = l
 
 		f := handler
 		for _, m := range slices.Backward(middlewares) {
@@ -51,6 +71,9 @@ func applyMiddlewares(handler handlerFunc, middlewares ...middleware) dns.Handle
 		}
 
 		f(rc, w, msg)
+
+		rc.Free()
+		ctxPool.Put(rc)
 	}
 }
 
