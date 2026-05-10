@@ -31,6 +31,7 @@ func NewServer(cfg *Config, handler *Handler) *Server {
 			handler.handleRequest,
 			recoverMiddleware,
 			logMiddleware("proto", handler.protocol),
+			handler.persistenceMiddleware,
 			timeMiddleware,
 		))
 

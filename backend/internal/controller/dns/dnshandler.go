@@ -1,16 +1,13 @@
 package dns
 
 import (
-	"context"
 	"fmt"
+	"gohole/internal/database"
 	"gohole/internal/query"
 	"log/slog"
-	"net"
 	"net/netip"
 
 	"codeberg.org/miekg/dns"
-	"codeberg.org/miekg/dns/dnsutil"
-	"github.com/google/uuid"
 )
 
 type Handler struct {
@@ -160,54 +157,17 @@ func (h *Handler) checkFilter(rc *ReqCtx, q dns.RR) (bool, error) {
 	return allow, nil
 }
 
-// forward forwards the query to the `upstream` server and returns the response.
-func (h *Handler) forward(ctx context.Context, r *dns.Msg) (*dns.Msg, error) {
-	c := new(dns.Client)
+// forwardRequest forwards the request to the upstream and updates the handler cache.
+func (h *Handler) forwardRequest(rc *ReqCtx, r *dns.Msg) (*dns.Msg, error) {
+	rc.Logger.Debug("Forwarding request to upstream", "name", rc.Name, "upstream", h.upstream)
 
-	resp, _, err := c.Exchange(ctx, r.Copy(), h.protocol, h.upstream)
+	c := new(dns.Client)
+	response, _, err := c.Exchange(rc.Context, r.Copy(), h.protocol, h.upstream)
 	if err != nil {
 		return nil, fmt.Errorf("failed to exchange with upstream over %s: %w", h.protocol, err)
 	}
 
-	resp.ID = r.ID
-
-	return resp, nil
-}
-
-func addDefaultPort(addr string) (string, error) {
-	_, _, err := net.SplitHostPort(addr)
-	if err == nil {
-		// port already present
-		return addr, nil
-	}
-
-	// Check it's actually a missing-port error and not a malformed address
-	ip := net.ParseIP(addr)
-	if ip == nil {
-		return "", fmt.Errorf("invalid address: %s", addr)
-	}
-
-	return net.JoinHostPort(addr, "53"), nil
-}
-
-func freshTraceID() string {
-	trace, err := uuid.NewV7()
-	if err != nil {
-		// In case of error generating the trace id, we log it and continue
-		slog.Error("Failed to generate trace ID", "error", err.Error())
-		trace = uuid.New()
-	}
-
-	return trace.String()
-}
-
-// forwardRequest forwards the request to the upstream and updates the handler cache.
-func (h *Handler) forwardRequest(rc *ReqCtx, r *dns.Msg) (*dns.Msg, error) {
-	rc.Logger.Debug("Forwarding request to upstream", "name", rc.Name, "upstream", h.upstream)
-	response, err := h.forward(rc.Context, r)
-	if err != nil {
-		return nil, err
-	}
+	response.ID = r.ID
 
 	// Update the cache (only if there is something to cache)
 	if len(response.Answer) > 0 {
@@ -223,16 +183,20 @@ func (h *Handler) forwardRequest(rc *ReqCtx, r *dns.Msg) (*dns.Msg, error) {
 	return responseFromAnswer(response.Answer[0], r), nil
 }
 
-func responseFromAnswer(a dns.RR, req *dns.Msg) *dns.Msg {
-	resp := new(dns.Msg)
-	dnsutil.SetReply(resp, req)
-	resp.Answer = []dns.RR{a}
-	return resp
-}
-
-func blockedResponse(req *dns.Msg) *dns.Msg {
-	resp := new(dns.Msg)
-	dnsutil.SetReply(resp, req)
-	resp.Rcode = dns.RcodeNameError
-	return resp
+// persistenceMiddleware stores the query in the database after the request has been handled.
+func (h *Handler) persistenceMiddleware(next handlerFunc) handlerFunc {
+	return func(rc *ReqCtx, w dns.ResponseWriter, r *dns.Msg) {
+		next(rc, w, r)
+		q := database.NewQuery(
+			rc.Name,
+			rc.Host,
+			!rc.Allowed,
+			rc.End.Sub(rc.Start).Milliseconds(),
+		)
+		err := h.queryService.Save(rc.Context, q)
+		if err != nil {
+			rc.Logger.Error("Failed to save query to database", "error", err.Error())
+		}
+		rc.Logger.Debug("Persisting query", "name", q.Name)
+	}
 }
