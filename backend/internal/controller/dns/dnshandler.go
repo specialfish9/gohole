@@ -132,6 +132,7 @@ func (h *Handler) checkCache(rc *ReqCtx, q dns.RR) (bool, dns.RR, error) {
 	rc.Logger.Debug("Cache hit", "key", key)
 
 	rc.Cached = true
+	rc.Allowed = allow
 
 	return allow, answer, nil
 }

@@ -2,16 +2,12 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"gohole/config"
 	"gohole/internal/blocklist"
-	"gohole/internal/controller/dns"
-	"gohole/internal/controller/http"
 	"gohole/internal/database"
 	"gohole/internal/database/clickhouse"
 	"gohole/internal/database/pg"
-	"gohole/internal/registry"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -69,6 +65,9 @@ func main() {
 	fmt.Println(" GOHOLE! ")
 	fmt.Println("=========")
 
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM) // SIGINT, SIGTERM
+
 	var configPath string
 	if len(os.Args) > 1 {
 		// The first argument is the config path
@@ -112,47 +111,17 @@ func main() {
 		}
 	}
 
-	reg, err := registry.NewRegistry(domains, allowDomains, cfg.Blocking.FilterStrategy, db, cfg)
+	reg, err := NewDaemonRegistry(domains, allowDomains, cfg.Blocking.FilterStrategy, db, cfg)
 	if err != nil {
 		logPanic(err)
 	}
 
-	// Close stuff on exit
-	defer func() {
-		err := errors.Join(
-			reg.Close(),
-			reg.QueryRepository.Close(),
-		)
-		if err != nil {
-			logPanic(fmt.Sprintf("closing: %v", err))
-		}
-	}()
-
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, os.Interrupt, syscall.SIGTERM) // SIGINT, SIGTERM
-
-	daemons := []Daemon{
-		http.NewServer(&cfg.HTTP, reg.QueryRouter),
-		dns.NewServer(&cfg.DNS, reg.TCPDNSHandler),
-		dns.NewServer(&cfg.DNS, reg.UDPDNSHandler),
-	}
-
-	for _, d := range daemons {
-		go func(d Daemon) {
-			if err := d.Start(); err != nil {
-				logPanic(fmt.Sprintf("Starting daemon %s: %v", d.ID(), err))
-			}
-		}(d)
-	}
+	reg.Start()
 
 	<-quit
 
 	slog.Info("Shutting down servers…")
-	for _, d := range daemons {
-		if err := d.Stop(); err != nil {
-			slog.Error(fmt.Sprintf("Stopping daemon %s: %v", d.ID(), err))
-		}
-	}
+	reg.Stop()
 
 	slog.Info("Bye :O")
 }
