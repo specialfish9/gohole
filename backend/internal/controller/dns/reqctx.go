@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"net"
+	"runtime/debug"
 	"slices"
 	"sync"
 	"time"
@@ -86,6 +87,7 @@ func recoverMiddleware(next handlerFunc) handlerFunc {
 		defer func() {
 			if err := recover(); err != nil {
 				rc.Logger.Error("PANIC!", "message", err)
+				debug.PrintStack()
 			}
 		}()
 
