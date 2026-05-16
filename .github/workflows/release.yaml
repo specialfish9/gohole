@@ -7,10 +7,6 @@ env:
 on:
   push:
     branches: ["master"]
-  pull_request:
-    # TODO!
-    branches:
-      - master
 
 jobs:
   tag:
