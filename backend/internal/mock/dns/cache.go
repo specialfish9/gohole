@@ -42,11 +42,11 @@ func (m *MockCache) EXPECT() *MockCacheMockRecorder {
 }
 
 // Get mocks base method.
-func (m *MockCache) Get(key dns0.CacheKey) (bool, dns.RR, bool) {
+func (m *MockCache) Get(key dns0.CacheKey) (bool, []dns.RR, bool) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Get", key)
 	ret0, _ := ret[0].(bool)
-	ret1, _ := ret[1].(dns.RR)
+	ret1, _ := ret[1].([]dns.RR)
 	ret2, _ := ret[2].(bool)
 	return ret0, ret1, ret2
 }
@@ -64,25 +64,25 @@ type MockCacheGetCall struct {
 }
 
 // Return rewrite *gomock.Call.Return
-func (c *MockCacheGetCall) Return(arg0 bool, arg1 dns.RR, arg2 bool) *MockCacheGetCall {
+func (c *MockCacheGetCall) Return(arg0 bool, arg1 []dns.RR, arg2 bool) *MockCacheGetCall {
 	c.Call = c.Call.Return(arg0, arg1, arg2)
 	return c
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *MockCacheGetCall) Do(f func(dns0.CacheKey) (bool, dns.RR, bool)) *MockCacheGetCall {
+func (c *MockCacheGetCall) Do(f func(dns0.CacheKey) (bool, []dns.RR, bool)) *MockCacheGetCall {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *MockCacheGetCall) DoAndReturn(f func(dns0.CacheKey) (bool, dns.RR, bool)) *MockCacheGetCall {
+func (c *MockCacheGetCall) DoAndReturn(f func(dns0.CacheKey) (bool, []dns.RR, bool)) *MockCacheGetCall {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }
 
 // Set mocks base method.
-func (m *MockCache) Set(key dns0.CacheKey, answer dns.RR, ttl uint32) {
+func (m *MockCache) Set(key dns0.CacheKey, answer []dns.RR, ttl uint32) {
 	m.ctrl.T.Helper()
 	m.ctrl.Call(m, "Set", key, answer, ttl)
 }
@@ -106,13 +106,13 @@ func (c *MockCacheSetCall) Return() *MockCacheSetCall {
 }
 
 // Do rewrite *gomock.Call.Do
-func (c *MockCacheSetCall) Do(f func(dns0.CacheKey, dns.RR, uint32)) *MockCacheSetCall {
+func (c *MockCacheSetCall) Do(f func(dns0.CacheKey, []dns.RR, uint32)) *MockCacheSetCall {
 	c.Call = c.Call.Do(f)
 	return c
 }
 
 // DoAndReturn rewrite *gomock.Call.DoAndReturn
-func (c *MockCacheSetCall) DoAndReturn(f func(dns0.CacheKey, dns.RR, uint32)) *MockCacheSetCall {
+func (c *MockCacheSetCall) DoAndReturn(f func(dns0.CacheKey, []dns.RR, uint32)) *MockCacheSetCall {
 	c.Call = c.Call.DoAndReturn(f)
 	return c
 }

@@ -153,7 +153,7 @@ func TestHandleRequest(t *testing.T) {
 			Return(upstreamResp, time.Duration(0), nil)
 		// Simulate cache miss
 		tc.cache.EXPECT().Get(gomock.Any()).Return(false, nil, false)
-		tc.cache.EXPECT().Set(gomock.Any(), aRecord, uint32(300))
+		tc.cache.EXPECT().Set(gomock.Any(), []gdns.RR{aRecord}, uint32(300))
 
 		rc := newReqCtx()
 		w := &fakeWriter{}
@@ -269,7 +269,7 @@ func TestHandleRequest(t *testing.T) {
 		}
 
 		// Simulate cache hit
-		tc.cache.EXPECT().Get(gomock.Any()).Return(true, aRecord, true)
+		tc.cache.EXPECT().Get(gomock.Any()).Return(true, []gdns.RR{aRecord}, true)
 
 		rc := newReqCtx()
 		w := &fakeWriter{}
