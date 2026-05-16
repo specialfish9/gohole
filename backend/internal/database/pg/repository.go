@@ -48,7 +48,11 @@ func (r *repositoryImpl) FindAll(ctx context.Context) ([]database.Query, error) 
 	return r.FindAllLimit(ctx, -1, "")
 }
 
-func (r *repositoryImpl) FindAllLimit(ctx context.Context, limit int, name string) ([]database.Query, error) {
+func (r *repositoryImpl) FindAllLimit(
+	ctx context.Context,
+	limit int,
+	name string,
+) ([]database.Query, error) {
 	base := `
 		SELECT name, type, host, blocked, timestamp, millis
 		FROM query
@@ -84,7 +88,10 @@ func (r *repositoryImpl) FindAllLimit(ctx context.Context, limit int, name strin
 	return res, nil
 }
 
-func (r *repositoryImpl) FindAllByInterval(ctx context.Context, since time.Time) ([]database.Query, error) {
+func (r *repositoryImpl) FindAllByInterval(
+	ctx context.Context,
+	since time.Time,
+) ([]database.Query, error) {
 	rows, err := r.mngr.pool.Query(ctx, `
 		SELECT name, type, blocked, timestamp
 		FROM query
@@ -104,7 +111,10 @@ func (r *repositoryImpl) FindAllByInterval(ctx context.Context, since time.Time)
 	return res, nil
 }
 
-func (r *repositoryImpl) FindHostStats(ctx context.Context, since time.Time) ([]database.HostStat, error) {
+func (r *repositoryImpl) FindHostStats(
+	ctx context.Context,
+	since time.Time,
+) ([]database.HostStat, error) {
 	rows, err := r.mngr.pool.Query(ctx, `
 		SELECT
 			host,
@@ -129,7 +139,10 @@ func (r *repositoryImpl) FindHostStats(ctx context.Context, since time.Time) ([]
 	return stats, nil
 }
 
-func (r *repositoryImpl) FindDomainStats(ctx context.Context, since time.Time) (database.DomainStats, error) {
+func (r *repositoryImpl) FindDomainStats(
+	ctx context.Context,
+	since time.Time,
+) (database.DomainStats, error) {
 	var stats database.DomainStats
 
 	err := r.mngr.pool.QueryRow(ctx, `
@@ -143,7 +156,12 @@ func (r *repositoryImpl) FindDomainStats(ctx context.Context, since time.Time) (
 	return stats, err
 }
 
-func (r *repositoryImpl) FindTopDomains(ctx context.Context, blocked bool, since time.Time, limit int) ([]database.TopDomain, error) {
+func (r *repositoryImpl) FindTopDomains(
+	ctx context.Context,
+	blocked bool,
+	since time.Time,
+	limit int,
+) ([]database.TopDomain, error) {
 	rows, err := r.mngr.pool.Query(ctx, `
 		SELECT name, COUNT(*) AS cnt
 		FROM query

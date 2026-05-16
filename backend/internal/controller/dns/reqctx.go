@@ -11,8 +11,6 @@ import (
 	"codeberg.org/miekg/dns"
 )
 
-const reqCtxKey = "reqCtx"
-
 type ReqCtx struct {
 	Context context.Context
 	Logger  *slog.Logger
@@ -55,7 +53,13 @@ func applyMiddlewares(handler handlerFunc, middlewares ...middleware) dns.Handle
 
 		host, _, err := net.SplitHostPort(w.RemoteAddr().String())
 		if err != nil {
-			l.Error("Failed to parse client address", "error", err.Error(), "remoteAddr", w.RemoteAddr().String())
+			l.Error(
+				"Failed to parse client address",
+				"error",
+				err.Error(),
+				"remoteAddr",
+				w.RemoteAddr().String(),
+			)
 			host = w.RemoteAddr().String()
 		}
 

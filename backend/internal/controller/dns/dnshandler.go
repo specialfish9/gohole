@@ -110,10 +110,7 @@ func (h *Handler) tryAnswerQuestion(rc *ReqCtx, q dns.RR) (bool, dns.RR, error) 
 
 	// Second, check cache
 	if h.cacheEnabled {
-		allowed, resp, err := h.checkCache(rc, q)
-		if err != nil {
-			return false, nil, err
-		}
+		allowed, resp := h.checkCache(rc, q)
 		if resp != nil {
 			return allowed, resp, nil
 		}
@@ -128,13 +125,13 @@ func (h *Handler) tryAnswerQuestion(rc *ReqCtx, q dns.RR) (bool, dns.RR, error) 
 	return allowed, nil, nil
 }
 
-func (h *Handler) checkCache(rc *ReqCtx, q dns.RR) (bool, dns.RR, error) {
+func (h *Handler) checkCache(rc *ReqCtx, q dns.RR) (bool, dns.RR) {
 	key := NewCacheKey(q)
 	rc.Logger.Debug("Performing cache lookup", "key", key)
 	allow, answer, cached := h.cache.Get(key)
 	if !cached {
 		rc.Logger.Debug("Cache miss", "key", key)
-		return false, nil, nil
+		return false, nil
 	}
 
 	rc.Logger.Debug("Cache hit", "key", key)
@@ -142,7 +139,7 @@ func (h *Handler) checkCache(rc *ReqCtx, q dns.RR) (bool, dns.RR, error) {
 	rc.Cached = true
 	rc.Allowed = allow
 
-	return allow, answer, nil
+	return allow, answer
 }
 
 func (h *Handler) checkFilter(rc *ReqCtx, q dns.RR) (bool, error) {

@@ -36,7 +36,9 @@ func (qr *QueryRouter) getAll(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	w.WriteHeader(http.StatusOK)
-	w.Write(b)
+	if _, err := w.Write(b); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -57,7 +59,9 @@ func (qr *QueryRouter) getStats(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	w.WriteHeader(http.StatusOK)
-	w.Write(b)
+	if _, err := w.Write(b); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -67,7 +71,7 @@ func (qr *QueryRouter) getStatsHistory(w http.ResponseWriter, r *http.Request) e
 	granularity := query.Granularity(r.URL.Query().Get("granularity"))
 
 	if !interval.IsValid() {
-		return newHTTPErr(http.StatusBadRequest, "invalid interval paramter value '%s'", interval)
+		return newHTTPErr(http.StatusBadRequest, "invalid interval parameter value '%s'", interval)
 	} else if !granularity.IsValid() {
 		return newHTTPErr(http.StatusBadRequest, "invalid granularity parameter value: '%s'", granularity)
 	}
@@ -82,12 +86,14 @@ func (qr *QueryRouter) getStatsHistory(w http.ResponseWriter, r *http.Request) e
 		return err
 	}
 	w.WriteHeader(http.StatusOK)
-	w.Write(b)
+	if _, err := w.Write(b); err != nil {
+		return err
+	}
 
 	return nil
 }
 
-func (qr *QueryRouter) getBlockListStats(w http.ResponseWriter, r *http.Request) error {
+func (qr *QueryRouter) getBlockListStats(w http.ResponseWriter, _ *http.Request) error {
 	stats, err := qr.queryService.GetBlockListStats()
 	if err != nil {
 		return err
@@ -98,7 +104,9 @@ func (qr *QueryRouter) getBlockListStats(w http.ResponseWriter, r *http.Request)
 		return err
 	}
 	w.WriteHeader(http.StatusOK)
-	w.Write(b)
+	if _, err := w.Write(b); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -119,7 +127,9 @@ func (qr *QueryRouter) getHostStats(w http.ResponseWriter, r *http.Request) erro
 		return err
 	}
 	w.WriteHeader(http.StatusOK)
-	w.Write(b)
+	if _, err := w.Write(b); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -140,7 +150,9 @@ func (qr *QueryRouter) getDomainStats(w http.ResponseWriter, r *http.Request) er
 		return err
 	}
 	w.WriteHeader(http.StatusOK)
-	w.Write(b)
+	if _, err := w.Write(b); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -150,7 +162,7 @@ func (qr *QueryRouter) getDomainDetails(w http.ResponseWriter, r *http.Request) 
 	granularity := query.Granularity(r.URL.Query().Get("granularity"))
 
 	if !interval.IsValid() {
-		return newHTTPErr(http.StatusBadRequest, "invalid interval paramter value '%s'", interval)
+		return newHTTPErr(http.StatusBadRequest, "invalid interval parameter value '%s'", interval)
 	} else if !granularity.IsValid() {
 		return newHTTPErr(http.StatusBadRequest, "invalid granularity parameter value: '%s'", granularity)
 	}
@@ -158,7 +170,10 @@ func (qr *QueryRouter) getDomainDetails(w http.ResponseWriter, r *http.Request) 
 	if granularity != query.Granularity1M &&
 		granularity != query.Granularity1D &&
 		granularity != query.Granularity1H {
-		return newHTTPErr(http.StatusBadRequest, "granularity parameter value must be one of 'minute', 'hour', or 'day'")
+		return newHTTPErr(
+			http.StatusBadRequest,
+			"granularity parameter value must be one of 'minute', 'hour', or 'day'",
+		)
 	}
 
 	name := chi.URLParam(r, "name")
@@ -176,7 +191,9 @@ func (qr *QueryRouter) getDomainDetails(w http.ResponseWriter, r *http.Request) 
 		return err
 	}
 	w.WriteHeader(http.StatusOK)
-	w.Write(b)
+	if _, err := w.Write(b); err != nil {
+		return err
+	}
 
 	return nil
 }

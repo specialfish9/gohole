@@ -72,7 +72,15 @@ func (r *repositoryImpl) batchWorker() {
 		}
 		for i := range flushMaxRetries {
 			if err := r.flushBatch(batch); err != nil {
-				slog.Error("batch flush failed", "error", err, "attempt", fmt.Sprintf("%d/%d", i, flushMaxRetries), "count", len(batch))
+				slog.Error(
+					"batch flush failed",
+					"error",
+					err,
+					"attempt",
+					fmt.Sprintf("%d/%d", i, flushMaxRetries),
+					"count",
+					len(batch),
+				)
 				if i == flushMaxRetries-1 {
 					slog.Error("max flush retries reached, dropping batch", "count", len(batch))
 					break
@@ -151,7 +159,11 @@ func (r *repositoryImpl) FindAll(ctx context.Context) ([]database.Query, error) 
 	return r.FindAllLimit(ctx, -1, "")
 }
 
-func (r *repositoryImpl) FindAllLimit(ctx context.Context, limit int, name string) ([]database.Query, error) {
+func (r *repositoryImpl) FindAllLimit(
+	ctx context.Context,
+	limit int,
+	name string,
+) ([]database.Query, error) {
 	baseQuery := `
 		SELECT name, type, host, blocked, timestamp, millis
 		FROM query
@@ -175,7 +187,11 @@ func (r *repositoryImpl) FindAllLimit(ctx context.Context, limit int, name strin
 	if err != nil {
 		return nil, fmt.Errorf("repository: cannot fetch all queries: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		if err = rows.Close(); err != nil {
+			slog.Error("repository: cannot close rows", "error", err)
+		}
+	}()
 
 	var queries []database.Query
 
@@ -192,11 +208,19 @@ func (r *repositoryImpl) FindAllLimit(ctx context.Context, limit int, name strin
 		q.Blocked = blockedUInt8 != 0
 		queries = append(queries, q)
 	}
+	defer func() {
+		if err := rows.Close(); err != nil {
+			slog.Error("failed to close rows", "error", err)
+		}
+	}()
 
 	return queries, nil
 }
 
-func (r *repositoryImpl) FindAllByInterval(ctx context.Context, since time.Time) ([]database.Query, error) {
+func (r *repositoryImpl) FindAllByInterval(
+	ctx context.Context,
+	since time.Time,
+) ([]database.Query, error) {
 	q := `
     SELECT name, type, blocked, timestamp
     FROM query
@@ -209,7 +233,11 @@ func (r *repositoryImpl) FindAllByInterval(ctx context.Context, since time.Time)
 		return nil, fmt.Errorf("repository: cannot fetch queries: %w", err)
 	}
 
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			slog.Error("failed to close rows", "error", err)
+		}
+	}()
 
 	var queries []database.Query
 
@@ -227,7 +255,10 @@ func (r *repositoryImpl) FindAllByInterval(ctx context.Context, since time.Time)
 	return queries, nil
 }
 
-func (r *repositoryImpl) FindHostStats(ctx context.Context, since time.Time) ([]database.HostStat, error) {
+func (r *repositoryImpl) FindHostStats(
+	ctx context.Context,
+	since time.Time,
+) ([]database.HostStat, error) {
 	rows, err := r.mngr.conn.Query(ctx, `
 		SELECT
 			host,
@@ -242,7 +273,11 @@ func (r *repositoryImpl) FindHostStats(ctx context.Context, since time.Time) ([]
 	if err != nil {
 		return nil, fmt.Errorf("repository: cannot fetch host stats: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			slog.Error("failed to close rows", "error", err)
+		}
+	}()
 
 	var stats []database.HostStat
 
@@ -258,7 +293,10 @@ func (r *repositoryImpl) FindHostStats(ctx context.Context, since time.Time) ([]
 	return stats, nil
 }
 
-func (r *repositoryImpl) FindDomainStats(ctx context.Context, since time.Time) (database.DomainStats, error) {
+func (r *repositoryImpl) FindDomainStats(
+	ctx context.Context,
+	since time.Time,
+) (database.DomainStats, error) {
 	var stats database.DomainStats
 
 	rows, err := r.mngr.conn.Query(ctx, `
@@ -271,7 +309,11 @@ func (r *repositoryImpl) FindDomainStats(ctx context.Context, since time.Time) (
 	if err != nil {
 		return stats, fmt.Errorf("repository: cannot fetch domain stats: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			slog.Error("failed to close rows", "error", err)
+		}
+	}()
 
 	if rows.Next() {
 		if err := rows.Scan(&stats.BlockedCount, &stats.Total); err != nil {
@@ -284,7 +326,12 @@ func (r *repositoryImpl) FindDomainStats(ctx context.Context, since time.Time) (
 	return stats, nil
 }
 
-func (r *repositoryImpl) FindTopDomains(ctx context.Context, blocked bool, since time.Time, limit int) ([]database.TopDomain, error) {
+func (r *repositoryImpl) FindTopDomains(
+	ctx context.Context,
+	blocked bool,
+	since time.Time,
+	limit int,
+) ([]database.TopDomain, error) {
 	rows, err := r.mngr.conn.Query(ctx, `
 		SELECT
 			name AS domain,
@@ -298,7 +345,11 @@ func (r *repositoryImpl) FindTopDomains(ctx context.Context, blocked bool, since
 	if err != nil {
 		return nil, fmt.Errorf("repository: cannot fetch top blocked domains: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			slog.Error("failed to close rows", "error", err)
+		}
+	}()
 
 	var domains []database.TopDomain
 
@@ -314,7 +365,12 @@ func (r *repositoryImpl) FindTopDomains(ctx context.Context, blocked bool, since
 	return domains, nil
 }
 
-func (r *repositoryImpl) FindDomainDetailsPoints(ctx context.Context, name string, since time.Time, granularity time.Duration) ([]database.Point, error) {
+func (r *repositoryImpl) FindDomainDetailsPoints(
+	ctx context.Context,
+	name string,
+	since time.Time,
+	granularity time.Duration,
+) ([]database.Point, error) {
 	var aggr string
 
 	switch granularity {
@@ -340,7 +396,11 @@ func (r *repositoryImpl) FindDomainDetailsPoints(ctx context.Context, name strin
 	if err != nil {
 		return nil, fmt.Errorf("repository: cannot fetch domain details points: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			slog.Error("failed to close rows", "error", err)
+		}
+	}()
 
 	var points []database.Point
 

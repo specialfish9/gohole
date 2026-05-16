@@ -19,7 +19,11 @@ type handlerFunc func(rc *ReqCtx, w dns.ResponseWriter, r *dns.Msg)
 
 //go:generate go tool go.uber.org/mock/mockgen -destination=../../mock/dns/dnsclient.go -typed -source=dns.go
 type Client interface {
-	Exchange(ctx context.Context, m *dns.Msg, network, address string) (*dns.Msg, time.Duration, error)
+	Exchange(
+		ctx context.Context,
+		m *dns.Msg,
+		network, address string,
+	) (*dns.Msg, time.Duration, error)
 }
 
 type Server struct {

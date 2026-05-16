@@ -13,7 +13,9 @@ import (
 	"gohole/internal/query"
 )
 
-func newService(t *testing.T) (query.Service, *mockdb.MockRepository, *mockfilter.MockFilter, *mockfilter.MockFilter) {
+func newService(
+	t *testing.T,
+) (query.Service, *mockdb.MockRepository, *mockfilter.MockFilter, *mockfilter.MockFilter) {
 	t.Helper()
 	ctrl := gomock.NewController(t)
 	repo := mockdb.NewMockRepository(ctrl)

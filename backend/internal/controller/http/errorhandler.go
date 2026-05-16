@@ -7,26 +7,27 @@ import (
 	"net/http"
 )
 
-type HTTPError struct {
+type Error struct {
 	Message string `json:"message"`
 	Status  int    `json:"status"`
 }
 
-var _ error = (*HTTPError)(nil)
+var _ error = (*Error)(nil)
 
-func (e *HTTPError) Error() string {
+func (e *Error) Error() string {
 	return e.Message
 }
 
-func newHTTPErr(status int, format string, args ...any) *HTTPError {
-	return &HTTPError{
+//nolint:unparam
+func newHTTPErr(status int, format string, args ...any) *Error {
+	return &Error{
 		Message: fmt.Sprintf(format, args...),
 		Status:  status,
 	}
 }
 
-func isHTTPError(err error) (bool, *HTTPError) {
-	httpErr := &HTTPError{}
+func isHTTPError(err error) (bool, *Error) {
+	httpErr := &Error{}
 	if ok := errors.As(err, &httpErr); ok {
 		return true, httpErr
 	}

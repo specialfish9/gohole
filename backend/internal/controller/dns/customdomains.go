@@ -21,7 +21,12 @@ func parseCustomDomains(customDomains map[string]any) (map[string]netip.Addr, er
 	for name, addr := range customDomains {
 		addrStr, ok := addr.(string)
 		if !ok {
-			return nil, fmt.Errorf("invalid IP address for entry '%s': expected a string, got '%v' of type %T", name, addr, addr)
+			return nil, fmt.Errorf(
+				"invalid IP address for entry '%s': expected a string, got '%v' of type %T",
+				name,
+				addr,
+				addr,
+			)
 		}
 
 		ip, err := netip.ParseAddr(addrStr)
@@ -53,7 +58,10 @@ func (h *Handler) checkCustomDomains(rc *ReqCtx, question dns.RR) (dns.RR, error
 	switch dns.RRToType(question) {
 	case dns.TypeA:
 		if !addr.Is4() {
-			return nil, fmt.Errorf("question is A, but IP address '%s' is not an IPv4 address", addr.String())
+			return nil, fmt.Errorf(
+				"question is A, but IP address '%s' is not an IPv4 address",
+				addr.String(),
+			)
 		}
 		return &dns.A{
 			Hdr: dns.Header{
@@ -66,7 +74,10 @@ func (h *Handler) checkCustomDomains(rc *ReqCtx, question dns.RR) (dns.RR, error
 
 	case dns.TypeAAAA:
 		if !addr.Is6() {
-			return nil, fmt.Errorf("question is AAAA, but IP address '%s' is not an IPv6 address", addr.String())
+			return nil, fmt.Errorf(
+				"question is AAAA, but IP address '%s' is not an IPv6 address",
+				addr.String(),
+			)
 		}
 
 		rr := &dns.AAAA{
@@ -80,6 +91,10 @@ func (h *Handler) checkCustomDomains(rc *ReqCtx, question dns.RR) (dns.RR, error
 		return rr, nil
 
 	default:
-		return nil, fmt.Errorf("unsupported query type %d for custom domain '%s'", dns.RRToType(question), question.Header().Name)
+		return nil, fmt.Errorf(
+			"unsupported query type %d for custom domain '%s'",
+			dns.RRToType(question),
+			question.Header().Name,
+		)
 	}
 }

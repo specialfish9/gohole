@@ -122,7 +122,13 @@ func TestInterval_ToDuration(t *testing.T) {
 }
 
 func TestInterval_IsValid(t *testing.T) {
-	valid := []query.Interval{query.Interval1H, query.Interval6H, query.Interval1D, query.Interval7D, query.Interval30D}
+	valid := []query.Interval{
+		query.Interval1H,
+		query.Interval6H,
+		query.Interval1D,
+		query.Interval7D,
+		query.Interval30D,
+	}
 	for _, i := range valid {
 		if !i.IsValid() {
 			t.Errorf("expected %q to be valid", i)

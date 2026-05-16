@@ -17,9 +17,15 @@ import (
 func TestGetDomainStats_OK(t *testing.T) {
 	svc, repo, _, _ := newService(t)
 
-	repo.EXPECT().FindDomainStats(gomock.Any(), gomock.Any()).Return(database.DomainStats{Total: 100, BlockedCount: 40}, nil)
-	repo.EXPECT().FindTopDomains(gomock.Any(), true, gomock.Any(), 10).Return([]database.TopDomain{{Domain: "bad.com", Count: 20}}, nil)
-	repo.EXPECT().FindTopDomains(gomock.Any(), false, gomock.Any(), 10).Return([]database.TopDomain{{Domain: "ok.com", Count: 80}}, nil)
+	repo.EXPECT().
+		FindDomainStats(gomock.Any(), gomock.Any()).
+		Return(database.DomainStats{Total: 100, BlockedCount: 40}, nil)
+	repo.EXPECT().
+		FindTopDomains(gomock.Any(), true, gomock.Any(), 10).
+		Return([]database.TopDomain{{Domain: "bad.com", Count: 20}}, nil)
+	repo.EXPECT().
+		FindTopDomains(gomock.Any(), false, gomock.Any(), 10).
+		Return([]database.TopDomain{{Domain: "ok.com", Count: 80}}, nil)
 
 	stats, err := svc.GetDomainStats(context.Background(), query.Interval1H)
 	if err != nil {
@@ -41,7 +47,9 @@ func TestGetDomainStats_OK(t *testing.T) {
 
 func TestGetDomainStats_FindDomainStatsError(t *testing.T) {
 	svc, repo, _, _ := newService(t)
-	repo.EXPECT().FindDomainStats(gomock.Any(), gomock.Any()).Return(database.DomainStats{}, errors.New("db error"))
+	repo.EXPECT().
+		FindDomainStats(gomock.Any(), gomock.Any()).
+		Return(database.DomainStats{}, errors.New("db error"))
 
 	_, err := svc.GetDomainStats(context.Background(), query.Interval1H)
 	if err == nil {
@@ -52,7 +60,9 @@ func TestGetDomainStats_FindDomainStatsError(t *testing.T) {
 func TestGetDomainStats_FindTopBlockedError(t *testing.T) {
 	svc, repo, _, _ := newService(t)
 	repo.EXPECT().FindDomainStats(gomock.Any(), gomock.Any()).Return(database.DomainStats{}, nil)
-	repo.EXPECT().FindTopDomains(gomock.Any(), true, gomock.Any(), 10).Return(nil, errors.New("db error"))
+	repo.EXPECT().
+		FindTopDomains(gomock.Any(), true, gomock.Any(), 10).
+		Return(nil, errors.New("db error"))
 
 	_, err := svc.GetDomainStats(context.Background(), query.Interval1H)
 	if err == nil {
@@ -64,7 +74,9 @@ func TestGetDomainStats_FindTopAllowedError(t *testing.T) {
 	svc, repo, _, _ := newService(t)
 	repo.EXPECT().FindDomainStats(gomock.Any(), gomock.Any()).Return(database.DomainStats{}, nil)
 	repo.EXPECT().FindTopDomains(gomock.Any(), true, gomock.Any(), 10).Return(nil, nil)
-	repo.EXPECT().FindTopDomains(gomock.Any(), false, gomock.Any(), 10).Return(nil, errors.New("db error"))
+	repo.EXPECT().
+		FindTopDomains(gomock.Any(), false, gomock.Any(), 10).
+		Return(nil, errors.New("db error"))
 
 	_, err := svc.GetDomainStats(context.Background(), query.Interval1H)
 	if err == nil {
@@ -81,10 +93,17 @@ func TestGetDomainDetails_OK(t *testing.T) {
 	step := query.Granularity1H.ToDuration()
 	point := database.Point{Time: now.Add(-step).Truncate(step), Count: 5}
 
-	repo.EXPECT().FindDomainDetailsPoints(gomock.Any(), "example.com", gomock.Any(), step).Return([]database.Point{point}, nil)
+	repo.EXPECT().
+		FindDomainDetailsPoints(gomock.Any(), "example.com", gomock.Any(), step).
+		Return([]database.Point{point}, nil)
 	blockFilter.EXPECT().Filter("example.com").Return(false, nil)
 
-	detail, err := svc.GetDomainDetails(context.Background(), "example.com", query.Interval1H, query.Granularity1H)
+	detail, err := svc.GetDomainDetails(
+		context.Background(),
+		"example.com",
+		query.Interval1H,
+		query.Granularity1H,
+	)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -103,10 +122,17 @@ func TestGetDomainDetails_Blocked(t *testing.T) {
 	svc, repo, blockFilter, _ := newService(t)
 
 	step := query.Granularity1H.ToDuration()
-	repo.EXPECT().FindDomainDetailsPoints(gomock.Any(), "bad.com", gomock.Any(), step).Return(nil, nil)
+	repo.EXPECT().
+		FindDomainDetailsPoints(gomock.Any(), "bad.com", gomock.Any(), step).
+		Return(nil, nil)
 	blockFilter.EXPECT().Filter("bad.com").Return(true, nil)
 
-	detail, err := svc.GetDomainDetails(context.Background(), "bad.com", query.Interval1H, query.Granularity1H)
+	detail, err := svc.GetDomainDetails(
+		context.Background(),
+		"bad.com",
+		query.Interval1H,
+		query.Granularity1H,
+	)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -119,9 +145,16 @@ func TestGetDomainDetails_RepoError(t *testing.T) {
 	svc, repo, _, _ := newService(t)
 
 	step := query.Granularity1H.ToDuration()
-	repo.EXPECT().FindDomainDetailsPoints(gomock.Any(), "example.com", gomock.Any(), step).Return(nil, errors.New("db error"))
+	repo.EXPECT().
+		FindDomainDetailsPoints(gomock.Any(), "example.com", gomock.Any(), step).
+		Return(nil, errors.New("db error"))
 
-	_, err := svc.GetDomainDetails(context.Background(), "example.com", query.Interval1H, query.Granularity1H)
+	_, err := svc.GetDomainDetails(
+		context.Background(),
+		"example.com",
+		query.Interval1H,
+		query.Granularity1H,
+	)
 	if err == nil {
 		t.Error("expected error, got nil")
 	}
@@ -131,10 +164,17 @@ func TestGetDomainDetails_BlockFilterError(t *testing.T) {
 	svc, repo, blockFilter, _ := newService(t)
 
 	step := query.Granularity1H.ToDuration()
-	repo.EXPECT().FindDomainDetailsPoints(gomock.Any(), "example.com", gomock.Any(), step).Return(nil, nil)
+	repo.EXPECT().
+		FindDomainDetailsPoints(gomock.Any(), "example.com", gomock.Any(), step).
+		Return(nil, nil)
 	blockFilter.EXPECT().Filter("example.com").Return(false, errors.New("filter error"))
 
-	_, err := svc.GetDomainDetails(context.Background(), "example.com", query.Interval1H, query.Granularity1H)
+	_, err := svc.GetDomainDetails(
+		context.Background(),
+		"example.com",
+		query.Interval1H,
+		query.Granularity1H,
+	)
 	if err == nil {
 		t.Error("expected error, got nil")
 	}

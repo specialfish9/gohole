@@ -97,7 +97,9 @@ func TestGetHistory_WithQueries(t *testing.T) {
 	q1 := database.Query{Timestamp: startTs.Unix() + 30, Blocked: true}
 	q2 := database.Query{Timestamp: startTs.Unix() + 30, Blocked: false}
 
-	repo.EXPECT().FindAllByInterval(gomock.Any(), gomock.Any()).Return([]database.Query{q1, q2}, nil)
+	repo.EXPECT().
+		FindAllByInterval(gomock.Any(), gomock.Any()).
+		Return([]database.Query{q1, q2}, nil)
 
 	points, err := svc.GetHistory(context.Background(), query.Interval1H, query.Granularity5M)
 	if err != nil {
