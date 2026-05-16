@@ -43,7 +43,11 @@ func (r *NoOpRepository) FindAll(ctx context.Context) ([]Query, error) {
 	return []Query{}, nil
 }
 
-func (r *NoOpRepository) FindAllLimit(ctx context.Context, limit int, name string) ([]Query, error) {
+func (r *NoOpRepository) FindAllLimit(
+	ctx context.Context,
+	limit int,
+	name string,
+) ([]Query, error) {
 	return []Query{}, nil
 }
 
@@ -55,11 +59,19 @@ func (r *NoOpRepository) FindHostStats(ctx context.Context, since time.Time) ([]
 	return []HostStat{}, nil
 }
 
-func (r *NoOpRepository) FindDomainStats(ctx context.Context, since time.Time) (DomainStats, error) {
+func (r *NoOpRepository) FindDomainStats(
+	ctx context.Context,
+	since time.Time,
+) (DomainStats, error) {
 	return DomainStats{}, nil
 }
 
-func (r *NoOpRepository) FindTopDomains(ctx context.Context, blocked bool, since time.Time, limit int) ([]TopDomain, error) {
+func (r *NoOpRepository) FindTopDomains(
+	ctx context.Context,
+	blocked bool,
+	since time.Time,
+	limit int,
+) ([]TopDomain, error) {
 	return []TopDomain{}, nil
 }
 

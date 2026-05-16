@@ -20,7 +20,11 @@ func LoadRemote(fileName string) ([]string, error) {
 	if err != nil {
 		return nil, fmt.Errorf("blocklist: opening blocklist file: %w", err)
 	}
-	defer file.Close()
+	defer func() {
+		if err = file.Close(); err != nil {
+			slog.Error("blocklist: closing blocklist file", "file", fileName, "err", err)
+		}
+	}()
 
 	var lines []string
 
@@ -59,7 +63,14 @@ func LoadRemote(fileName string) ([]string, error) {
 		domains = append(domains, urls...)
 	}
 
-	slog.Info(fmt.Sprintf("Loaded %d out of %d blocklists (%d domains)\n", dones, len(lines), len(domains)))
+	slog.Info(
+		fmt.Sprintf(
+			"Loaded %d out of %d blocklists (%d domains)\n",
+			dones,
+			len(lines),
+			len(domains),
+		),
+	)
 
 	return domains, nil
 }
@@ -70,7 +81,11 @@ func LoadLocalFile(fileName string) ([]string, error) {
 		return nil, fmt.Errorf("blocklist: opening local blocklist file: %w", err)
 	}
 
-	defer f.Close()
+	defer func() {
+		if err = f.Close(); err != nil {
+			slog.Error("blocklist: closing local blocklist file", "file", fileName, "err", err)
+		}
+	}()
 
 	content, err := io.ReadAll(f)
 	if err != nil {
@@ -87,11 +102,15 @@ func download(url string) (string, error) {
 		return "", fmt.Errorf("blocklist: downloading blocklist: %w", err)
 	}
 
+	defer func() {
+		if err = resp.Body.Close(); err != nil {
+			slog.Error("blocklist: closing body", "url", url, "err", err)
+		}
+	}()
+
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("blocklist: downloading blocklist: status code %d", resp.StatusCode)
 	}
-
-	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"codeberg.org/miekg/dns"
 )
@@ -12,6 +13,18 @@ type Protocol = string
 
 const UDP Protocol = "udp"
 const TCP Protocol = "tcp"
+
+type middleware func(next handlerFunc) handlerFunc
+type handlerFunc func(rc *ReqCtx, w dns.ResponseWriter, r *dns.Msg)
+
+//go:generate go tool go.uber.org/mock/mockgen -destination=../../mock/dns/dnsclient.go -typed -source=dns.go
+type Client interface {
+	Exchange(
+		ctx context.Context,
+		m *dns.Msg,
+		network, address string,
+	) (*dns.Msg, time.Duration, error)
+}
 
 type Server struct {
 	protocol Protocol
@@ -22,7 +35,15 @@ type Server struct {
 
 func NewServer(cfg *Config, handler *Handler) *Server {
 	mux := dns.NewServeMux()
-	mux.HandleFunc(".", recoverMiddleware(handler.handleRequest)) // "." = catch-all
+	mux.HandleFunc(
+		".", // "." = catch-all
+		applyMiddlewares(
+			handler.HandleRequest,
+			recoverMiddleware,
+			logMiddleware("proto", handler.protocol),
+			handler.persistenceMiddleware,
+			timeMiddleware,
+		))
 
 	return &Server{
 		srv: dns.Server{
@@ -59,16 +80,4 @@ func (s *Server) Stop() error {
 	s.l.Info("Stopping DNS server", "protocol", s.protocol, "address", s.srv.Addr)
 	s.srv.Shutdown(context.Background())
 	return nil
-}
-
-func recoverMiddleware(next func(context.Context, dns.ResponseWriter, *dns.Msg)) func(context.Context, dns.ResponseWriter, *dns.Msg) {
-	return func(ctx context.Context, w dns.ResponseWriter, r *dns.Msg) {
-		defer func() {
-			if err := recover(); err != nil {
-				slog.Error("PANIC!", "message", err)
-			}
-		}()
-
-		next(ctx, w, r)
-	}
 }

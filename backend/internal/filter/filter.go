@@ -1,5 +1,7 @@
 package filter
 
+//go:generate go tool go.uber.org/mock/mockgen -destination=../mock/filter/filter.go -typed -package mockfilter gohole/internal/filter Filter
+
 import "log/slog"
 
 type Strategy = string

@@ -8,6 +8,8 @@ import (
 	"gohole/internal/database"
 	"gohole/internal/filter"
 	"gohole/internal/query"
+
+	dns2 "codeberg.org/miekg/dns"
 )
 
 type Registry struct {
@@ -17,7 +19,7 @@ type Registry struct {
 
 	UDPDNSHandler *dns.Handler
 	TCPDNSHandler *dns.Handler
-	DNSCache      *dns.Cache
+	DNSCache      dns.Cache
 }
 
 func NewRegistry(
@@ -35,13 +37,14 @@ func NewRegistry(
 	queryService := query.NewService(blockFilter, allowFilter, repo)
 
 	dnsCache := dns.NewCache()
+	dnsClient := &dns2.Client{}
 
-	tcpHandler, err := dns.NewHandler(queryService, dns.TCP, dnsCache, &cfg.DNS)
+	tcpHandler, err := dns.NewHandler(queryService, dns.TCP, dnsCache, &cfg.DNS, dnsClient)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create TCP DNS handler: %w", err)
 	}
 
-	udpHandler, err := dns.NewHandler(queryService, dns.UDP, dnsCache, &cfg.DNS)
+	udpHandler, err := dns.NewHandler(queryService, dns.UDP, dnsCache, &cfg.DNS, dnsClient)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create UDP DNS handler: %w", err)
 	}
@@ -55,11 +58,4 @@ func NewRegistry(
 		TCPDNSHandler: tcpHandler,
 		UDPDNSHandler: udpHandler,
 	}, nil
-}
-
-func (r *Registry) Close() error {
-	if err := r.QueryRepository.Close(); err != nil {
-		return fmt.Errorf("failed to close repository: %w", err)
-	}
-	return nil
 }

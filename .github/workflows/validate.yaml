@@ -1,0 +1,61 @@
+name: BE Validate
+
+on:
+  pull_request:
+    paths:
+      - backend/**
+    branches:
+      - master
+
+env:
+  GO_VERSION: "1.26.2"
+
+permissions:
+  # This is required for actions/checkout
+  contents: read
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Setup
+        run: make setup
+
+      - name: Download linter
+        run: make download-lint
+
+      - name: Run linter
+        run: make lint
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Setup
+        run: make setup
+
+      - name: Run tests
+        run: make test

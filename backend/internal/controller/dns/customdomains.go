@@ -21,7 +21,12 @@ func parseCustomDomains(customDomains map[string]any) (map[string]netip.Addr, er
 	for name, addr := range customDomains {
 		addrStr, ok := addr.(string)
 		if !ok {
-			return nil, fmt.Errorf("invalid IP address for entry '%s': expected a string, got '%v' of type %T", name, addr, addr)
+			return nil, fmt.Errorf(
+				"invalid IP address for entry '%s': expected a string, got '%v' of type %T",
+				name,
+				addr,
+				addr,
+			)
 		}
 
 		ip, err := netip.ParseAddr(addrStr)
@@ -37,37 +42,42 @@ func parseCustomDomains(customDomains map[string]any) (map[string]netip.Addr, er
 	return res, nil
 }
 
-func (h *Handler) customDomainResponse(w dns.ResponseWriter, r *dns.Msg, ip netip.Addr) (*dns.Msg, error) {
-	response := new(dns.Msg)
-	dnsutil.SetReply(response, r)
-	response.Authoritative = true
-
-	if len(r.Question) == 0 {
-		response.Rcode = dns.RcodeFormatError
-		return response, nil
+// checkCustomDomains checks whether the given question contains a name in the custom domains map.
+// It will then create a response RR.
+func (h *Handler) checkCustomDomains(rc *ReqCtx, question dns.RR) (dns.RR, error) {
+	addr, isCustom := h.customDomains[rc.Name]
+	if !isCustom {
+		rc.Logger.Debug("Name isn't a custom domain", "name", rc.Name)
+		return nil, nil
 	}
 
-	// TODO handle multiple questions!
-	question := r.Question[0]
+	// Update the request context
+	rc.Custom = true
+	rc.Logger.Debug("Name is a custom domain", "name", rc.Name)
 
 	switch dns.RRToType(question) {
 	case dns.TypeA:
-		if !ip.Is4() {
-			return nil, fmt.Errorf("question is A, but IP address '%s' is not an IPv4 address", ip.String())
+		if !addr.Is4() {
+			return nil, fmt.Errorf(
+				"question is A, but IP address '%s' is not an IPv4 address",
+				addr.String(),
+			)
 		}
-		rr := &dns.A{
+		return &dns.A{
 			Hdr: dns.Header{
 				Name:  question.Header().Name,
 				Class: dns.ClassINET,
 				TTL:   60,
 			},
-			A: rdata.A{Addr: ip},
-		}
-		response.Answer = append(response.Answer, rr)
+			A: rdata.A{Addr: addr},
+		}, nil
 
 	case dns.TypeAAAA:
-		if !ip.Is6() {
-			return nil, fmt.Errorf("question is AAAA, but IP address '%s' is not an IPv6 address", ip.String())
+		if !addr.Is6() {
+			return nil, fmt.Errorf(
+				"question is AAAA, but IP address '%s' is not an IPv6 address",
+				addr.String(),
+			)
 		}
 
 		rr := &dns.AAAA{
@@ -76,13 +86,15 @@ func (h *Handler) customDomainResponse(w dns.ResponseWriter, r *dns.Msg, ip neti
 				Class: dns.ClassINET,
 				TTL:   60,
 			},
-			AAAA: rdata.AAAA{Addr: ip},
+			AAAA: rdata.AAAA{Addr: addr},
 		}
-		response.Answer = append(response.Answer, rr)
+		return rr, nil
 
 	default:
-		return nil, fmt.Errorf("unsupported query type %d for custom domain '%s'", dns.RRToType(question), question.Header().Name)
+		return nil, fmt.Errorf(
+			"unsupported query type %d for custom domain '%s'",
+			dns.RRToType(question),
+			question.Header().Name,
+		)
 	}
-
-	return response, nil
 }

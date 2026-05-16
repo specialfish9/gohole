@@ -9,15 +9,25 @@ import (
 	"time"
 )
 
+//go:generate go tool go.uber.org/mock/mockgen -destination=../mock/query/queryservice.go -typed -source=queryservice.go
 type Service interface {
 	Save(ctx context.Context, q database.Query) error
 	GetAll(ctx context.Context, limit int, name string) ([]database.Query, error)
 	GetStats(ctx context.Context, interval Interval) (*Stats, error)
-	GetHistory(ctx context.Context, interval Interval, granularity Granularity) ([]QueryHistoryPoint, error)
+	GetHistory(
+		ctx context.Context,
+		interval Interval,
+		granularity Granularity,
+	) ([]QueryHistoryPoint, error)
 	GetBlockListStats() (*BlockListStats, error)
 	GetHostStats(ctx context.Context, interival Interval) ([]database.HostStat, error)
 	GetDomainStats(ctx context.Context, interval Interval) (DomainStats, error)
-	GetDomainDetails(ctx context.Context, name string, interval Interval, granularity Granularity) (*DomainDetail, error)
+	GetDomainDetails(
+		ctx context.Context,
+		name string,
+		interval Interval,
+		granularity Granularity,
+	) (*DomainDetail, error)
 	ShouldAllow(name string) (bool, error)
 }
 
@@ -27,7 +37,11 @@ type serviceImpl struct {
 	allowFilter filter.Filter
 }
 
-func NewService(blockFilter filter.Filter, allowFilter filter.Filter, repo database.Repository) Service {
+func NewService(
+	blockFilter filter.Filter,
+	allowFilter filter.Filter,
+	repo database.Repository,
+) Service {
 	return &serviceImpl{
 		blockFilter: blockFilter,
 		allowFilter: allowFilter,
@@ -39,7 +53,11 @@ func (s *serviceImpl) Save(ctx context.Context, q database.Query) error {
 	return s.repo.SaveQuery(ctx, q)
 }
 
-func (s *serviceImpl) GetAll(ctx context.Context, limit int, name string) ([]database.Query, error) {
+func (s *serviceImpl) GetAll(
+	ctx context.Context,
+	limit int,
+	name string,
+) ([]database.Query, error) {
 	return s.repo.FindAllLimit(ctx, limit, name)
 }
 
@@ -74,7 +92,7 @@ func (s *serviceImpl) GetStats(ctx context.Context, interval Interval) (*Stats, 
 	if interval == "" {
 		queries, err = s.repo.FindAll(ctx)
 	} else {
-		queries, err = s.repo.FindAllByInterval(ctx, time.Now().UTC().Add(-time.Duration(interval.ToDuration())))
+		queries, err = s.repo.FindAllByInterval(ctx, time.Now().UTC().Add(-interval.ToDuration()))
 	}
 
 	if err != nil {
@@ -104,7 +122,11 @@ func (s *serviceImpl) GetStats(ctx context.Context, interval Interval) (*Stats, 
 	}, nil
 }
 
-func (s *serviceImpl) GetHistory(ctx context.Context, interval Interval, granularity Granularity) ([]QueryHistoryPoint, error) {
+func (s *serviceImpl) GetHistory(
+	ctx context.Context,
+	interval Interval,
+	granularity Granularity,
+) ([]QueryHistoryPoint, error) {
 	granularityStep := granularity.ToDuration().Seconds()
 	stepsNo := interval.ToDuration().Seconds() / granularityStep
 
@@ -156,7 +178,10 @@ func (s *serviceImpl) GetBlockListStats() (*BlockListStats, error) {
 	}, nil
 }
 
-func (s *serviceImpl) GetHostStats(ctx context.Context, interval Interval) ([]database.HostStat, error) {
+func (s *serviceImpl) GetHostStats(
+	ctx context.Context,
+	interval Interval,
+) ([]database.HostStat, error) {
 	since := time.Now().UTC().Add(-interval.ToDuration())
 	return s.repo.FindHostStats(ctx, since)
 }
@@ -189,7 +214,12 @@ func (s *serviceImpl) GetDomainStats(ctx context.Context, interval Interval) (Do
 	return ret, nil
 }
 
-func (s *serviceImpl) GetDomainDetails(ctx context.Context, name string, interval Interval, granularity Granularity) (*DomainDetail, error) {
+func (s *serviceImpl) GetDomainDetails(
+	ctx context.Context,
+	name string,
+	interval Interval,
+	granularity Granularity,
+) (*DomainDetail, error) {
 	step := granularity.ToDuration()
 	since := time.Now().UTC().Add(-interval.ToDuration())
 

@@ -13,8 +13,7 @@ type CacheKey struct {
 	Class uint16
 }
 
-func NewCacheKey(msg *dns.Msg) CacheKey {
-	question := msg.Question[0]
+func NewCacheKey(question dns.RR) CacheKey {
 	return CacheKey{
 		Name:  question.Header().Name,
 		Type:  dns.RRToType(question),
@@ -23,27 +22,34 @@ func NewCacheKey(msg *dns.Msg) CacheKey {
 }
 
 type CacheEntry struct {
-	Answer     []dns.RR
+	Answer     dns.RR
 	Expiration time.Time
 	allowed    bool
 }
 
-type Cache struct {
+//go:generate go tool go.uber.org/mock/mockgen -destination=../../mock/dns/cache.go -typed -source=cache.go
+type Cache interface {
+	// Get retrieves a cached DNS response for the given key.
+	// It returns a boolean indicating whether the entry
+	// should be allowed, the cached message, and a boolean
+	// indicating if the entry was found.
+	Get(key CacheKey) (bool, dns.RR, bool)
+	SetBlocked(key CacheKey)
+	Set(key CacheKey, answer dns.RR, ttl uint32)
+}
+
+type cacheImpl struct {
 	mu    sync.RWMutex
 	items map[CacheKey]*CacheEntry
 }
 
-func NewCache() *Cache {
-	return &Cache{
+func NewCache() Cache {
+	return &cacheImpl{
 		items: make(map[CacheKey]*CacheEntry),
 	}
 }
 
-// Get retrieves a cached DNS response for the given key.
-// It returns a boolean indicating whether the entry
-// should be allowed, the cached message, and a boolean
-// indicating if the entry was found.
-func (c *Cache) Get(key CacheKey) (bool, []dns.RR, bool) {
+func (c *cacheImpl) Get(key CacheKey) (bool, dns.RR, bool) {
 	c.mu.RLock()
 	entry, ok := c.items[key]
 	c.mu.RUnlock()
@@ -71,22 +77,21 @@ func (c *Cache) Get(key CacheKey) (bool, []dns.RR, bool) {
 	return entry.allowed, entry.Answer, true
 }
 
-func (c *Cache) SetBlocked(key CacheKey, msg *dns.Msg) {
+func (c *cacheImpl) SetBlocked(key CacheKey) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	c.items[key] = &CacheEntry{
 		allowed: false,
-		Answer:  msg.Answer,
 	}
 }
 
-func (c *Cache) Set(key CacheKey, msg *dns.Msg, ttl uint32) {
+func (c *cacheImpl) Set(key CacheKey, answer dns.RR, ttl uint32) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	c.items[key] = &CacheEntry{
-		Answer:     msg.Answer,
+		Answer:     answer,
 		Expiration: time.Now().Add(time.Duration(ttl) * time.Second),
 		allowed:    true,
 	}

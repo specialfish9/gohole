@@ -1,5 +1,7 @@
 package database
 
+//go:generate go tool go.uber.org/mock/mockgen -destination=../mock/database/repository.go -typed -package mockrepo gohole/internal/database Repository
+
 import (
 	"context"
 	"time"
@@ -17,8 +19,18 @@ type Repository interface {
 	FindAllByInterval(ctx context.Context, since time.Time) ([]Query, error)
 	FindHostStats(ctx context.Context, since time.Time) ([]HostStat, error)
 	FindDomainStats(ctx context.Context, since time.Time) (DomainStats, error)
-	FindTopDomains(ctx context.Context, blocked bool, since time.Time, limit int) ([]TopDomain, error)
-	FindDomainDetailsPoints(ctx context.Context, name string, since time.Time, granularity time.Duration) ([]Point, error)
+	FindTopDomains(
+		ctx context.Context,
+		blocked bool,
+		since time.Time,
+		limit int,
+	) ([]TopDomain, error)
+	FindDomainDetailsPoints(
+		ctx context.Context,
+		name string,
+		since time.Time,
+		granularity time.Duration,
+	) ([]Point, error)
 	// Close flushes any buffered writes and stops the background batch worker.
 	// Call this on application shutdown.
 	Close() error
