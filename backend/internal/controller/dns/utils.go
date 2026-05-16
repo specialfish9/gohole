@@ -37,10 +37,10 @@ func freshTraceID() string {
 	return trace.String()
 }
 
-func responseFromAnswer(a dns.RR, req *dns.Msg) *dns.Msg {
+func responseFromAnswer(a []dns.RR, req *dns.Msg) *dns.Msg {
 	resp := new(dns.Msg)
 	dnsutil.SetReply(resp, req)
-	resp.Answer = []dns.RR{a}
+	resp.Answer = append(resp.Answer, a...)
 	return resp
 }
 

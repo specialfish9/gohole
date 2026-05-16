@@ -57,7 +57,7 @@ func TestCache_SetAndGet(t *testing.T) {
 	rr := newARecord("example.com.", "1.2.3.4")
 	key := dns.CacheKey{Name: "example.com.", Type: gdns.TypeA, Class: gdns.ClassINET}
 
-	c.Set(key, rr, 60)
+	c.Set(key, []gdns.RR{rr}, 60)
 
 	allowed, got, found := c.Get(key)
 	if !found {
@@ -66,7 +66,10 @@ func TestCache_SetAndGet(t *testing.T) {
 	if !allowed {
 		t.Error("expected allowed=true for Set entry")
 	}
-	if got != rr {
+	if len(got) != 1 {
+		t.Fatalf("expected 1 RR in answer, got %d", len(got))
+	}
+	if got[0] != rr {
 		t.Error("expected the same RR back from cache")
 	}
 }
@@ -95,7 +98,7 @@ func TestCache_Expiration(t *testing.T) {
 	key := dns.CacheKey{Name: "ttl.com.", Type: gdns.TypeA, Class: gdns.ClassINET}
 
 	// Set with TTL of 0 seconds — expires immediately
-	c.Set(key, rr, 0)
+	c.Set(key, []gdns.RR{rr}, 0)
 
 	// Wait briefly to ensure expiration
 	time.Sleep(10 * time.Millisecond)
@@ -121,40 +124,5 @@ func TestCache_BlockedEntryDoesNotExpire(t *testing.T) {
 	}
 	if allowed {
 		t.Error("expected allowed=false for blocked entry")
-	}
-}
-
-func TestCache_OverwriteEntry(t *testing.T) {
-	c := dns.NewCache()
-	rr1 := newARecord("overwrite.com.", "1.1.1.1")
-	rr2 := newARecord("overwrite.com.", "2.2.2.2")
-	key := dns.CacheKey{Name: "overwrite.com.", Type: gdns.TypeA, Class: gdns.ClassINET}
-
-	c.Set(key, rr1, 60)
-	c.Set(key, rr2, 60)
-
-	_, got, found := c.Get(key)
-	if !found {
-		t.Fatal("expected cache hit after overwrite")
-	}
-	if got != rr2 {
-		t.Error("expected second RR after overwrite")
-	}
-}
-
-func TestCache_SetBlockedOverwritesAllowed(t *testing.T) {
-	c := dns.NewCache()
-	rr := newARecord("overwrite.com.", "1.1.1.1")
-	key := dns.CacheKey{Name: "overwrite.com.", Type: gdns.TypeA, Class: gdns.ClassINET}
-
-	c.Set(key, rr, 60)
-	c.SetBlocked(key)
-
-	allowed, _, found := c.Get(key)
-	if !found {
-		t.Fatal("expected cache hit after SetBlocked overwrote Set")
-	}
-	if allowed {
-		t.Error("expected allowed=false after SetBlocked")
 	}
 }

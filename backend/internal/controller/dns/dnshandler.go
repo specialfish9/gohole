@@ -99,7 +99,7 @@ func (h *Handler) HandleRequest(rc *ReqCtx, w dns.ResponseWriter, r *dns.Msg) {
 	}
 }
 
-func (h *Handler) tryAnswerQuestion(rc *ReqCtx, q dns.RR) (bool, dns.RR, error) {
+func (h *Handler) tryAnswerQuestion(rc *ReqCtx, q dns.RR) (bool, []dns.RR, error) {
 	rc.Logger.Debug("Answering question", "name", rc.Name)
 
 	// First, check custom domains
@@ -109,7 +109,7 @@ func (h *Handler) tryAnswerQuestion(rc *ReqCtx, q dns.RR) (bool, dns.RR, error) 
 	}
 	if resp != nil {
 		// Custom domains are always allowed by definition
-		return true, resp, nil
+		return true, []dns.RR{resp}, nil
 	}
 
 	// Second, check cache
@@ -129,7 +129,7 @@ func (h *Handler) tryAnswerQuestion(rc *ReqCtx, q dns.RR) (bool, dns.RR, error) 
 	return allowed, nil, nil
 }
 
-func (h *Handler) checkCache(rc *ReqCtx, q dns.RR) (bool, dns.RR) {
+func (h *Handler) checkCache(rc *ReqCtx, q dns.RR) (bool, []dns.RR) {
 	key := NewCacheKey(q)
 	rc.Logger.Debug("Performing cache lookup", "key", key)
 	allow, answer, cached := h.cache.Get(key)
@@ -180,14 +180,21 @@ func (h *Handler) forwardRequest(rc *ReqCtx, r *dns.Msg) (*dns.Msg, error) {
 
 	// Update the cache (only if there is something to cache)
 	if len(response.Answer) > 0 {
-		answer := response.Answer[0]
 		if h.cacheEnabled {
-			ttl := answer.Header().TTL
-			cacheKey := NewCacheKey(answer)
+			// We use the first answer to create the cache key, since all answers should have the same name
+			cacheKey := NewCacheKey(response.Answer[0])
+			// We take the smallest TTL from the answer
+			var ttl uint32
+			for _, ans := range response.Answer {
+				if ttl == 0 || ans.Header().TTL < ttl {
+					ttl = ans.Header().TTL
+				}
+			}
+
 			rc.Logger.Debug("Updating cache", "key", cacheKey, "TTL", ttl)
-			h.cache.Set(cacheKey, answer, ttl)
+			h.cache.Set(cacheKey, response.Answer, ttl)
 		}
-		return responseFromAnswer(response.Answer[0], r), nil
+		return responseFromAnswer(response.Answer, r), nil
 	} else {
 		rc.Logger.Debug("No answer to cache", "name", rc.Name)
 	}

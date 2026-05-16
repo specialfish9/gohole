@@ -22,7 +22,7 @@ func NewCacheKey(question dns.RR) CacheKey {
 }
 
 type CacheEntry struct {
-	Answer     dns.RR
+	Answer     []dns.RR
 	Expiration time.Time
 	allowed    bool
 }
@@ -33,9 +33,9 @@ type Cache interface {
 	// It returns a boolean indicating whether the entry
 	// should be allowed, the cached message, and a boolean
 	// indicating if the entry was found.
-	Get(key CacheKey) (bool, dns.RR, bool)
+	Get(key CacheKey) (bool, []dns.RR, bool)
 	SetBlocked(key CacheKey)
-	Set(key CacheKey, answer dns.RR, ttl uint32)
+	Set(key CacheKey, answer []dns.RR, ttl uint32)
 }
 
 type cacheImpl struct {
@@ -49,7 +49,7 @@ func NewCache() Cache {
 	}
 }
 
-func (c *cacheImpl) Get(key CacheKey) (bool, dns.RR, bool) {
+func (c *cacheImpl) Get(key CacheKey) (bool, []dns.RR, bool) {
 	c.mu.RLock()
 	entry, ok := c.items[key]
 	c.mu.RUnlock()
@@ -86,7 +86,7 @@ func (c *cacheImpl) SetBlocked(key CacheKey) {
 	}
 }
 
-func (c *cacheImpl) Set(key CacheKey, answer dns.RR, ttl uint32) {
+func (c *cacheImpl) Set(key CacheKey, answer []dns.RR, ttl uint32) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
