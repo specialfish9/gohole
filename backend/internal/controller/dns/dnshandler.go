@@ -85,6 +85,10 @@ func (h *Handler) HandleRequest(rc *ReqCtx, w dns.ResponseWriter, r *dns.Msg) {
 			// In case of error, return an error response
 			rc.Error = fmt.Errorf("dns handler: error forwarding request to upstream: %w", err)
 			response = blockedResponse(r)
+		} else if response == nil {
+			// If the response is nil, it means that the upstream did not return an answer, so
+			// we return a refused response
+			response = blockedResponse(r)
 		}
 	}
 
@@ -183,11 +187,12 @@ func (h *Handler) forwardRequest(rc *ReqCtx, r *dns.Msg) (*dns.Msg, error) {
 			rc.Logger.Debug("Updating cache", "key", cacheKey, "TTL", ttl)
 			h.cache.Set(cacheKey, answer, ttl)
 		}
+		return responseFromAnswer(response.Answer[0], r), nil
 	} else {
 		rc.Logger.Debug("No answer to cache", "name", rc.Name)
 	}
 
-	return responseFromAnswer(response.Answer[0], r), nil
+	return nil, nil
 }
 
 // persistenceMiddleware stores the query in the database after the request has been handled.
