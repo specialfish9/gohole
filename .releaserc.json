@@ -48,6 +48,6 @@
   ],
   "tagFormat": "v${version}",
   "branches": [
-    "master",
+    "master"
   ]
 }
