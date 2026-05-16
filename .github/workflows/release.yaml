@@ -33,6 +33,12 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ steps.generate-token.outputs.token }}
+          persist-credentials: true  # Ensure credentials persist
+
+      - name: Configure Git
+        run: |
+          git config user.name "specialfish9-gohole[bot]"
+          git config user.email "specialfish9-gohole[bot]@users.noreply.github.com"
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
