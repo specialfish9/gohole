@@ -1,4 +1,4 @@
-name: Build Docker Image
+name: Release
 
 env:
   DOCKER_IMAGE: gohole
@@ -7,6 +7,10 @@ env:
 on:
   push:
     branches: ["master"]
+  pull_request:
+    # TODO!
+    branches:
+      - master
 
 jobs:
   tag:
@@ -51,8 +55,8 @@ jobs:
             @semantic-release/github@11
             conventional-changelog-conventionalcommits@9
             conventional-changelog-angular@8
-          env:
-            GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
+        env:
+          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
     outputs:
       version: ${{ steps.semantic.outputs.new_release_version }}
 
