@@ -32,6 +32,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ steps.generate-token.outputs.token }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -57,7 +58,7 @@ jobs:
       version: ${{ steps.semantic.outputs.new_release_version }}
 
   build:
-    name: Build and publish Docker image
+    name: Build and publish Linux/AMD64 Docker image
     needs: tag
     runs-on: ubuntu-latest
     if: needs.tag.outputs.version != ''
@@ -86,7 +87,7 @@ jobs:
             ${{ env.DOCKER_USER }}/${{ env.DOCKER_IMAGE }}:${{ needs.tag.outputs.version }}
 
   build-arm:
-    name: Build and publish Docker image
+    name: Build and publish Linux/ARM64 Docker image
     needs: tag
     runs-on: ubuntu-latest
     if: needs.tag.outputs.version != ''
