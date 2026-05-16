@@ -1,5 +1,7 @@
 package database
 
+//go:generate go tool go.uber.org/mock/mockgen -destination=../mock/database/repository.go -typed -package mockrepo gohole/internal/database Repository
+
 import (
 	"context"
 	"time"

@@ -33,3 +33,6 @@ go.work.sum
 ./clickhouse-vol/
 backend/frontend/
 backend/block.txt
+.idea
+backend/.idea
+frontend/.idea

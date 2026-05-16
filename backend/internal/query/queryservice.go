@@ -9,6 +9,7 @@ import (
 	"time"
 )
 
+//go:generate go tool go.uber.org/mock/mockgen -destination=../mock/query/queryservice.go -typed -source=queryservice.go
 type Service interface {
 	Save(ctx context.Context, q database.Query) error
 	GetAll(ctx context.Context, limit int, name string) ([]database.Query, error)

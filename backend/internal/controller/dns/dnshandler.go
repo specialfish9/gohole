@@ -16,10 +16,17 @@ type Handler struct {
 	queryService  query.Service
 	protocol      Protocol
 	customDomains map[string]netip.Addr
-	cache         *Cache
+	cache         Cache
+	client        Client
 }
 
-func NewHandler(queryService query.Service, protocol Protocol, cache *Cache, cfg *Config) (*Handler, error) {
+func NewHandler(
+	queryService query.Service,
+	protocol Protocol,
+	cache Cache,
+	cfg *Config,
+	client Client,
+) (*Handler, error) {
 	upstream, err := addDefaultPort(cfg.Upstream)
 	if err != nil {
 		return nil, fmt.Errorf("dns handler: invalid upstream address: %v", err)
@@ -42,11 +49,12 @@ func NewHandler(queryService query.Service, protocol Protocol, cache *Cache, cfg
 		cache:         cache,
 		protocol:      protocol,
 		customDomains: customDomains,
+		client:        client,
 	}, nil
 }
 
-// handleRequest forwards DNS queries to the upstream server
-func (h *Handler) handleRequest(rc *ReqCtx, w dns.ResponseWriter, r *dns.Msg) {
+// HandleRequest forwards DNS queries to the upstream server
+func (h *Handler) HandleRequest(rc *ReqCtx, w dns.ResponseWriter, r *dns.Msg) {
 	rc.Logger.Debug("Handling DNS request", "from", rc.Host)
 
 	// We only answer the first question
@@ -162,8 +170,7 @@ func (h *Handler) checkFilter(rc *ReqCtx, q dns.RR) (bool, error) {
 func (h *Handler) forwardRequest(rc *ReqCtx, r *dns.Msg) (*dns.Msg, error) {
 	rc.Logger.Debug("Forwarding request to upstream", "name", rc.Name, "upstream", h.upstream)
 
-	c := new(dns.Client)
-	response, _, err := c.Exchange(rc.Context, r.Copy(), h.protocol, h.upstream)
+	response, _, err := h.client.Exchange(rc.Context, r.Copy(), h.protocol, h.upstream)
 	if err != nil {
 		return nil, fmt.Errorf("failed to exchange with upstream over %s: %w", h.protocol, err)
 	}
@@ -173,10 +180,12 @@ func (h *Handler) forwardRequest(rc *ReqCtx, r *dns.Msg) (*dns.Msg, error) {
 	// Update the cache (only if there is something to cache)
 	if len(response.Answer) > 0 {
 		answer := response.Answer[0]
-		ttl := answer.Header().TTL
-		cacheKey := NewCacheKey(answer)
-		rc.Logger.Debug("Updating cache", "key", cacheKey, "TTL", ttl)
-		h.cache.Set(cacheKey, answer, ttl)
+		if h.cacheEnabled {
+			ttl := answer.Header().TTL
+			cacheKey := NewCacheKey(answer)
+			rc.Logger.Debug("Updating cache", "key", cacheKey, "TTL", ttl)
+			h.cache.Set(cacheKey, answer, ttl)
+		}
 	} else {
 		rc.Logger.Debug("No answer to cache", "name", rc.Name)
 	}

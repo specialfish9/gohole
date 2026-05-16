@@ -87,11 +87,11 @@ func download(url string) (string, error) {
 		return "", fmt.Errorf("blocklist: downloading blocklist: %w", err)
 	}
 
+	defer resp.Body.Close()
+
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("blocklist: downloading blocklist: status code %d", resp.StatusCode)
 	}
-
-	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {

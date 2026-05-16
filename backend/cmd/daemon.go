@@ -8,6 +8,8 @@ import (
 	"gohole/internal/database"
 	"gohole/internal/filter"
 	"gohole/internal/query"
+
+	dns2 "codeberg.org/miekg/dns"
 )
 
 type Daemon interface {
@@ -39,12 +41,14 @@ func NewDaemonRegistry(
 
 	dnsCache := dns.NewCache()
 
-	tcpHandler, err := dns.NewHandler(queryService, dns.TCP, dnsCache, &cfg.DNS)
+	dnsClient := dns2.NewClient()
+
+	tcpHandler, err := dns.NewHandler(queryService, dns.TCP, dnsCache, &cfg.DNS, dnsClient)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create TCP DNS handler: %w", err)
 	}
 
-	udpHandler, err := dns.NewHandler(queryService, dns.UDP, dnsCache, &cfg.DNS)
+	udpHandler, err := dns.NewHandler(queryService, dns.UDP, dnsCache, &cfg.DNS, dnsClient)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create UDP DNS handler: %w", err)
 	}

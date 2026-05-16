@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"codeberg.org/miekg/dns"
 )
@@ -15,6 +16,11 @@ const TCP Protocol = "tcp"
 
 type middleware func(next handlerFunc) handlerFunc
 type handlerFunc func(rc *ReqCtx, w dns.ResponseWriter, r *dns.Msg)
+
+//go:generate go tool go.uber.org/mock/mockgen -destination=../../mock/dns/dnsclient.go -typed -source=dns.go
+type Client interface {
+	Exchange(ctx context.Context, m *dns.Msg, network, address string) (*dns.Msg, time.Duration, error)
+}
 
 type Server struct {
 	protocol Protocol
@@ -28,7 +34,7 @@ func NewServer(cfg *Config, handler *Handler) *Server {
 	mux.HandleFunc(
 		".", // "." = catch-all
 		applyMiddlewares(
-			handler.handleRequest,
+			handler.HandleRequest,
 			recoverMiddleware,
 			logMiddleware("proto", handler.protocol),
 			handler.persistenceMiddleware,
