@@ -179,8 +179,8 @@ func (h *Handler) forwardRequest(rc *ReqCtx, r *dns.Msg) (*dns.Msg, error) {
 	response.ID = r.ID
 
 	// Update the cache (only if there is something to cache)
-	if len(response.Answer) > 0 {
-		if h.cacheEnabled {
+	if h.cacheEnabled {
+		if len(response.Answer) > 0 {
 			// We use the first answer to create the cache key, since all answers should have the same name
 			cacheKey := NewCacheKey(response.Answer[0])
 			// We take the smallest TTL from the answer
@@ -193,13 +193,12 @@ func (h *Handler) forwardRequest(rc *ReqCtx, r *dns.Msg) (*dns.Msg, error) {
 
 			rc.Logger.Debug("Updating cache", "key", cacheKey, "TTL", ttl)
 			h.cache.Set(cacheKey, response.Answer, ttl)
+		} else {
+			rc.Logger.Debug("No answer to cache", "name", rc.Name)
 		}
-		return responseFromAnswer(response.Answer, r), nil
-	} else {
-		rc.Logger.Debug("No answer to cache", "name", rc.Name)
 	}
 
-	return nil, nil
+	return response, nil
 }
 
 // persistenceMiddleware stores the query in the database after the request has been handled.
