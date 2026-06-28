@@ -11,13 +11,14 @@ import (
 )
 
 type Handler struct {
-	upstream      string
-	cacheEnabled  bool
-	queryService  query.Service
-	protocol      Protocol
-	customDomains map[string]netip.Addr
-	cache         Cache
-	client        Client
+	upstream         string
+	cacheEnabled     bool
+	queryService     query.Service
+	protocol         Protocol
+	customDomains    map[string]netip.Addr
+	cache            Cache
+	client           Client
+	blockingStrategy BlockingStrategy
 }
 
 func NewHandler(
@@ -42,14 +43,29 @@ func NewHandler(
 		}
 	}
 
+	bs := cfg.BlockingStrategy.Or(BlockingStrategyNXDOMAIN)
+
+	slog.Debug(
+		"DNS handler configuration",
+		"upstream",
+		upstream,
+		"cache_enabled",
+		cfg.CacheEnabled.Or(false),
+		"blocking_strategy",
+		bs,
+		"custom_domains_count",
+		len(customDomains),
+	)
+
 	return &Handler{
-		upstream:      upstream,
-		cacheEnabled:  cfg.CacheEnabled.Or(false),
-		queryService:  queryService,
-		cache:         cache,
-		protocol:      protocol,
-		customDomains: customDomains,
-		client:        client,
+		upstream:         upstream,
+		cacheEnabled:     cfg.CacheEnabled.Or(false),
+		queryService:     queryService,
+		cache:            cache,
+		protocol:         protocol,
+		customDomains:    customDomains,
+		client:           client,
+		blockingStrategy: bs,
 	}, nil
 }
 
@@ -72,23 +88,23 @@ func (h *Handler) HandleRequest(rc *ReqCtx, w dns.ResponseWriter, r *dns.Msg) {
 	if err != nil {
 		// In case of error, return an error response
 		rc.Error = fmt.Errorf("dns handler: error trying answer question: %w", err)
-		response = blockedResponse(r)
+		response = blockedResponse(r, h.blockingStrategy)
 	} else if answer != nil {
 		response = responseFromAnswer(answer, r)
 	} else if !allow {
 		// Else, if the domain is blocked, then return a refused response
-		response = blockedResponse(r)
+		response = blockedResponse(r, h.blockingStrategy)
 	} else {
 		// Else, if the domain is allowed, forward the request to the upstream
 		response, err = h.forwardRequest(rc, r)
 		if err != nil {
 			// In case of error, return an error response
 			rc.Error = fmt.Errorf("dns handler: error forwarding request to upstream: %w", err)
-			response = blockedResponse(r)
+			response = blockedResponse(r, h.blockingStrategy)
 		} else if response == nil {
 			// If the response is nil, it means that the upstream did not return an answer, so
 			// we return a refused response
-			response = blockedResponse(r)
+			response = blockedResponse(r, h.blockingStrategy)
 		}
 	}
 

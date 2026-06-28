@@ -2,12 +2,15 @@ package http
 
 import (
 	"fmt"
+	"log"
 	"log/slog"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+
+	_ "net/http/pprof"
 )
 
 type Server struct {
@@ -49,6 +52,11 @@ func NewServer(cfg *Config, qr *QueryRouter) *Server {
 		serveStatic(r)
 	}
 
+	// Separate debug server — the right way
+	go func() {
+		log.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
+
 	return &Server{
 		srv: http.Server{
 			Addr:    cfg.Address,
@@ -57,6 +65,7 @@ func NewServer(cfg *Config, qr *QueryRouter) *Server {
 		l:        slog.With("component", "httpsrv"),
 		frontend: fe,
 	}
+
 }
 
 func (s *Server) ID() string {
