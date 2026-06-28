@@ -57,6 +57,7 @@ func NewServer(cfg *Config, qr *QueryRouter) *Server {
 		l:        slog.With("component", "httpsrv"),
 		frontend: fe,
 	}
+
 }
 
 func (s *Server) ID() string {

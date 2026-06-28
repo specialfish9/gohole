@@ -7,7 +7,6 @@ import (
 
 	"codeberg.org/miekg/dns"
 	"codeberg.org/miekg/dns/dnsutil"
-	"codeberg.org/miekg/dns/rdata"
 )
 
 func normalizeName(name string) string {
@@ -55,46 +54,5 @@ func (h *Handler) checkCustomDomains(rc *ReqCtx, question dns.RR) (dns.RR, error
 	rc.Custom = true
 	rc.Logger.Debug("Name is a custom domain", "name", rc.Name)
 
-	switch dns.RRToType(question) {
-	case dns.TypeA:
-		if !addr.Is4() {
-			return nil, fmt.Errorf(
-				"question is A, but IP address '%s' is not an IPv4 address",
-				addr.String(),
-			)
-		}
-		return &dns.A{
-			Hdr: dns.Header{
-				Name:  question.Header().Name,
-				Class: dns.ClassINET,
-				TTL:   60,
-			},
-			A: rdata.A{Addr: addr},
-		}, nil
-
-	case dns.TypeAAAA:
-		if !addr.Is6() {
-			return nil, fmt.Errorf(
-				"question is AAAA, but IP address '%s' is not an IPv6 address",
-				addr.String(),
-			)
-		}
-
-		rr := &dns.AAAA{
-			Hdr: dns.Header{
-				Name:  question.Header().Name,
-				Class: dns.ClassINET,
-				TTL:   60,
-			},
-			AAAA: rdata.AAAA{Addr: addr},
-		}
-		return rr, nil
-
-	default:
-		return nil, fmt.Errorf(
-			"unsupported query type %d for custom domain '%s'",
-			dns.RRToType(question),
-			question.Header().Name,
-		)
-	}
+	return answerFromQuestion(question, addr)
 }

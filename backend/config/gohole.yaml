@@ -9,6 +9,7 @@ dns:
   address: ":8054"
   upstream: "1.1.1.1"
   cache: true
+  blocking_strategy: "ip"
 
 db:
   type: "none"
