@@ -15,10 +15,10 @@ dns:
   upstream: "1.1.1.1:53"
   # Enable DNS caching for faster responses
   cache: true 
-  # Optional: DNS blocking strategy: NXDOMAIN | ip. Default is NXDOMAIN.
-  # - NXDOMAIN: blocked domains return NXDOMAIN response
+  # Optional: DNS blocking strategy: nxdomain | ip. Default is nxdomain.
+  # - nxdomain: blocked domains return NXDOMAIN response
   # - ip: blocked domains return a fixed IP address (0.0.0.0 for IPv4, :: for IPv6)
-  blocking_strategy: "NXDOMAIN"  
+  blocking_strategy: "nxdomain"
   # Optional: list of custom domains to resolve
   custom_domains:
     "foo.bar": "10.10.10.10"

@@ -51,6 +51,12 @@ func blockedResponse(req *dns.Msg, strategy BlockingStrategy) *dns.Msg {
 	if strategy == BlockingStrategyIP {
 		resp := new(dns.Msg)
 		dnsutil.SetReply(resp, req)
+
+		if len(req.Question) == 0 {
+			resp.Rcode = dns.RcodeFormatError
+			return resp
+		}
+
 		question := req.Question[0]
 
 		var addr netip.Addr
@@ -60,13 +66,13 @@ func blockedResponse(req *dns.Msg, strategy BlockingStrategy) *dns.Msg {
 		case dns.TypeAAAA:
 			addr = netip.MustParseAddr("::")
 		default:
-			// For unsupported query types, we default to returning an IPv4
+			// For unsupported query types, we default to returning NXDOMAIN
 			slog.Warn(
-				"Unsupported query type for blocked response using 'ip' blocking strategy. Defaulting to IPv4 address",
+				"Unsupported query type for blocked response using 'ip' blocking strategy. Defaulting to NXDOMAIN",
 				"query_type",
 				dns.RRToType(question),
 			)
-			addr = netip.MustParseAddr("0.0.0.0")
+			return blockedResponse(req, BlockingStrategyNXDOMAIN)
 		}
 
 		answer, err := answerFromQuestion(question, addr)
@@ -133,7 +139,7 @@ func answerFromQuestion(question dns.RR, addr netip.Addr) (dns.RR, error) {
 
 	default:
 		return nil, fmt.Errorf(
-			"unsupported query type %d for custom domain '%s'",
+			"unsupported query type %d for question name '%s'",
 			dns.RRToType(question),
 			question.Header().Name,
 		)

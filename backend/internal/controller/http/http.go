@@ -9,8 +9,6 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
-
-	_ "net/http/pprof"
 )
 
 type Server struct {
@@ -51,11 +49,6 @@ func NewServer(cfg *Config, qr *QueryRouter) *Server {
 	if fe {
 		serveStatic(r)
 	}
-
-	// Separate debug server — the right way
-	go func() {
-		log.Println(http.ListenAndServe("localhost:6060", nil))
-	}()
 
 	return &Server{
 		srv: http.Server{
