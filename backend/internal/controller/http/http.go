@@ -2,7 +2,6 @@ package http
 
 import (
 	"fmt"
-	"log"
 	"log/slog"
 	"net/http"
 
