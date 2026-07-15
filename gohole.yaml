@@ -11,7 +11,8 @@ http:
 dns:
   # Listen address for DNS server (UDP)
   address: ":53"
-  # Upstream DNS server for non-blocked queries
+  # Upstream DNS server for non-blocked queries.
+  # Can be an IP:port address (e.g., 1.1.1.1:53) or a DoH URL (e.g., https://cloudflare-dns.com/dns-query)
   upstream: "1.1.1.1:53"
   # Enable DNS caching for faster responses
   cache: true 

@@ -11,7 +11,7 @@ exposed through a web dashboard.
 - DNS-based ad & tracker blocking
 - Super-duper easy to set up and use, with a user-friendly web dashboard
 - Configurable blocklists and allowlists in the same format as Pi-hole
-- Forward permitted queries to a custom upstream DNS server
+- Forward permitted queries to a custom upstream DNS server (supports standard DNS and DNS over HTTPS (DoH))
 - Resolve custom domains to specific IPs
 - High-performance query logging (ClickHouse)
 - Web dashboard for analytics and monitoring + Grafana support
@@ -37,7 +37,7 @@ Then go to [http://localhost:8080](http://localhost:8080) to access the dashboar
 
 Configuration is done through a `yaml` file. A sample configuration is provided in 
 [gohole.yaml](./gohole.yaml). The configuration file includes settings for the DNS server, blocklists, allowlists,
-upstream DNS server, logging, and ClickHouse connection details.
+upstream DNS server (standard or DoH), logging, and ClickHouse connection details.
 
 ## Grafana
 Grafana can be used to visualize query logs stored in ClickHouse. A [sample Grafana dashboard](./grafana/gohole-dashboard.json)

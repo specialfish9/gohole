@@ -28,9 +28,15 @@ func NewHandler(
 	cfg *Config,
 	client Client,
 ) (*Handler, error) {
-	upstream, err := addDefaultPort(cfg.Upstream)
-	if err != nil {
-		return nil, fmt.Errorf("dns handler: invalid upstream address: %v", err)
+	var upstream string
+	if IsURL(cfg.Upstream) {
+		upstream = cfg.Upstream
+	} else {
+		var err error
+		upstream, err = addDefaultPort(cfg.Upstream)
+		if err != nil {
+			return nil, fmt.Errorf("dns handler: invalid upstream address: %v", err)
+		}
 	}
 
 	customDomains := make(map[string]netip.Addr)

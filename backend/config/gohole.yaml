@@ -6,7 +6,7 @@ http:
   serve_frontend: true
 
 dns:
-  address: ":8054"
+  address: ":53"
   upstream: "1.1.1.1"
   cache: true
   blocking_strategy: "ip"

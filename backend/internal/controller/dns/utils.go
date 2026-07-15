@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net"
 	"net/netip"
+	"strings"
 
 	"codeberg.org/miekg/dns"
 	"codeberg.org/miekg/dns/dnsutil"
@@ -144,4 +145,8 @@ func answerFromQuestion(question dns.RR, addr netip.Addr) (dns.RR, error) {
 			question.Header().Name,
 		)
 	}
+}
+
+func IsURL(addr string) bool {
+	return strings.HasPrefix(addr, "https://") || strings.HasPrefix(addr, "http://")
 }

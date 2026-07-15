@@ -41,7 +41,12 @@ func NewDaemonRegistry(
 
 	dnsCache := dns.NewCache()
 
-	dnsClient := dns2.NewClient()
+	var dnsClient dns.Client
+	if dns.IsURL(cfg.DNS.Upstream) {
+		dnsClient = dns.NewDohClient()
+	} else {
+		dnsClient = dns2.NewClient()
+	}
 
 	tcpHandler, err := dns.NewHandler(queryService, dns.TCP, dnsCache, &cfg.DNS, dnsClient)
 	if err != nil {
