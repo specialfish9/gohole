@@ -12,7 +12,7 @@ dns:
   # Listen address for DNS server (UDP)
   address: ":53"
   # Upstream DNS server for non-blocked queries.
-  # Can be an IP:port address (e.g., 1.1.1.1:53) or a DoH URL (e.g., https://cloudflare-dns.com/dns-query)
+  # Can be an IP:port address (e.g., 1.1.1.1:53) or a DNS over HTTP (DoH) URL
   upstream: "1.1.1.1:53"
   # Enable DNS caching for faster responses
   cache: true 
@@ -23,6 +23,9 @@ dns:
   # Optional: list of custom domains to resolve
   custom_domains:
     "foo.bar": "10.10.10.10"
+  # Optional: enable DNS over HTTPS (DoH) for upstream queries. The address and port 
+  # set by the `http.address` option will be used for DoH server. 
+  doh_enabled: false
 
 # Database connection settings for query storage
 db:

@@ -21,7 +21,10 @@ func TestDohClient_Exchange(t *testing.T) {
 			t.Errorf("expected POST method, got %s", r.Method)
 		}
 		if r.Header.Get("Content-Type") != "application/dns-message" {
-			t.Errorf("expected Content-Type application/dns-message, got %s", r.Header.Get("Content-Type"))
+			t.Errorf(
+				"expected Content-Type application/dns-message, got %s",
+				r.Header.Get("Content-Type"),
+			)
 		}
 		if r.Header.Get("Accept") != "application/dns-message" {
 			t.Errorf("expected Accept application/dns-message, got %s", r.Header.Get("Accept"))

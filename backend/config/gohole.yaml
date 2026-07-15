@@ -6,10 +6,11 @@ http:
   serve_frontend: true
 
 dns:
-  address: ":53"
+  address: ":8053"
   upstream: "1.1.1.1"
   cache: true
   blocking_strategy: "ip"
+  doh_enabled: true
 
 db:
   type: "none"

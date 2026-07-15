@@ -8,6 +8,10 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+type Router interface {
+	Register(r chi.Router)
+}
+
 type QueryRouter struct {
 	queryService query.Service
 }
@@ -16,6 +20,16 @@ func NewQueryRouter(queryService query.Service) *QueryRouter {
 	return &QueryRouter{
 		queryService: queryService,
 	}
+}
+
+func (qr *QueryRouter) Register(r chi.Router) {
+	r.Get("/api/queries", errorHandler(qr.getAll))
+	r.Get("/api/queries/stats", errorHandler(qr.getStats))
+	r.Get("/api/queries/stats/history", errorHandler(qr.getStatsHistory))
+	r.Get("/api/hosts/stats", errorHandler(qr.getHostStats))
+	r.Get("/api/domains/stats", errorHandler(qr.getDomainStats))
+	r.Get("/api/domains/{name}", errorHandler(qr.getDomainDetails))
+	r.Get("/api/blocklist/stats", errorHandler(qr.getBlockListStats))
 }
 
 func (qr *QueryRouter) getAll(w http.ResponseWriter, r *http.Request) error {

@@ -1,11 +1,13 @@
 package dns
 
 import (
+	"context"
 	"fmt"
 	"gohole/internal/database"
 	"gohole/internal/query"
 	"log/slog"
 	"net/netip"
+	"time"
 
 	"codeberg.org/miekg/dns"
 )
@@ -119,6 +121,24 @@ func (h *Handler) HandleRequest(rc *ReqCtx, w dns.ResponseWriter, r *dns.Msg) {
 	} else {
 		rc.Logger.Debug("Sent response to client", "from", rc.Host)
 	}
+}
+
+// HandleRequestWithMiddlewares handles DNS request with full middleware chain.
+func (h *Handler) HandleRequestWithMiddlewares(
+	ctx context.Context,
+	w dns.ResponseWriter,
+	r *dns.Msg,
+) {
+	// Initialize ReqCtx with necessary fields
+	rc := &ReqCtx{
+		Context: ctx,
+		Logger:  slog.Default(),
+		Host:    "doh", // Or extract from context if possible
+		Start:   time.Now(),
+	}
+	defer func() { rc.End = time.Now() }()
+
+	h.persistenceMiddleware(h.HandleRequest)(rc, w, r)
 }
 
 func (h *Handler) tryAnswerQuestion(rc *ReqCtx, q dns.RR) (bool, []dns.RR, error) {

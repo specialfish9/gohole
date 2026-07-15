@@ -64,7 +64,11 @@ func (c *DohClient) Exchange(
 	}
 
 	if respMsg.ID != m.ID {
-		return nil, 0, fmt.Errorf("doh client: response ID %d does not match request ID %d", respMsg.ID, m.ID)
+		return nil, 0, fmt.Errorf(
+			"doh client: response ID %d does not match request ID %d",
+			respMsg.ID,
+			m.ID,
+		)
 	}
 
 	return respMsg, time.Since(start), nil

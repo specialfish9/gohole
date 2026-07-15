@@ -11,7 +11,8 @@ exposed through a web dashboard.
 - DNS-based ad & tracker blocking
 - Super-duper easy to set up and use, with a user-friendly web dashboard
 - Configurable blocklists and allowlists in the same format as Pi-hole
-- Forward permitted queries to a custom upstream DNS server (supports standard DNS and DNS over HTTPS (DoH))
+- Forward permitted queries to a custom upstream DNS server
+- Supports standard DNS and DNS over HTTPS (DoH)
 - Resolve custom domains to specific IPs
 - High-performance query logging (ClickHouse)
 - Web dashboard for analytics and monitoring + Grafana support

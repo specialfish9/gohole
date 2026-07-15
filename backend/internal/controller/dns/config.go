@@ -21,4 +21,6 @@ type Config struct {
 	CustomDomains confuso.Optional[map[string]any] `confuso:"custom_domains"`
 	// BlockingStrategy defines how blocked queries are handled. Default is "nxdomain".
 	BlockingStrategy confuso.Optional[BlockingStrategy] `confuso:"blocking_strategy"`
+	// DoHEnabled toggles DoH support. Disabled by default.
+	DoHEnabled confuso.Optional[bool] `confuso:"doh_enabled"`
 }
