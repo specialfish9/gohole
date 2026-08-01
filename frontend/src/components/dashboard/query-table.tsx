@@ -31,13 +31,19 @@ export const QueryTable = () => {
 
   // Auto-refresh queries every 30 seconds
   useEffect(() => {
-    fetchQueries()
-    const refreshInterval = setInterval(fetchQueries, 30000)
+    ;(async () => {
+      await fetchQueries()
+    })()
+    const refreshInterval = setInterval(() => {
+      fetchQueries()
+    }, 30000)
     return () => clearInterval(refreshInterval)
   }, [])
 
   useEffect(() => {
-    fetchQueries()
+    ;(async () => {
+      await fetchQueries()
+    })()
   }, [searchParams])
 
   const handleSearch = () => {

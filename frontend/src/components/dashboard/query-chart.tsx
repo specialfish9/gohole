@@ -22,6 +22,48 @@ const hostPieColors = [
   "#a4de6c", "#d0ed57", "#ffc0cb", "#b0e0e6", "#f4a460"
 ];
 
+interface CustomTooltipProps {
+  active?: boolean
+  payload?: Array<{ value: number }>
+  label?: string
+}
+
+function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
+  if (active && payload && payload.length) {
+    return (
+      <div className="rounded-lg border bg-background p-2 shadow-sm">
+        <div className="grid grid-cols-2 gap-2">
+          <div className="flex flex-col">
+            <span className="text-[0.70rem] uppercase text-muted-foreground">
+              Time
+            </span>
+            <span className="font-bold text-muted-foreground">
+              {label}
+            </span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[0.70rem] uppercase text-muted-foreground">
+              Blocked
+            </span>
+            <span className="font-bold text-destructive">
+              {payload[0]?.value}
+            </span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[0.70rem] uppercase text-muted-foreground">
+              Allowed
+            </span>
+            <span className="font-bold text-success">
+              {payload[1]?.value}
+            </span>
+          </div>
+        </div>
+      </div>
+    )
+  }
+  return null
+}
+
 export function QueryChart({
   pieData,
   hostData,
@@ -39,7 +81,7 @@ export function QueryChart({
 
   hostData.sort((a, b) => b.queryCount - a.queryCount)
 
-  const dateFormat = () => {
+  const dateFormat = (): Intl.DateTimeFormatOptions => {
     if (granularity === "1m" || granularity === "5m" || granularity === "15m") {
       return {
         hour: "2-digit",
@@ -62,43 +104,6 @@ export function QueryChart({
       hour: "2-digit",
       minute: "2-digit"
     }
-  }
-
-  // Custom tooltip for bar chart
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="rounded-lg border bg-background p-2 shadow-sm">
-          <div className="grid grid-cols-2 gap-2">
-            <div className="flex flex-col">
-              <span className="text-[0.70rem] uppercase text-muted-foreground">
-                Time
-              </span>
-              <span className="font-bold text-muted-foreground">
-                {label}
-              </span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[0.70rem] uppercase text-muted-foreground">
-                Blocked
-              </span>
-              <span className="font-bold text-destructive">
-                {payload[0].value}
-              </span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[0.70rem] uppercase text-muted-foreground">
-                Allowed
-              </span>
-              <span className="font-bold text-success">
-                {payload[1].value}
-              </span>
-            </div>
-          </div>
-        </div>
-      )
-    }
-    return null
   }
 
   return (
@@ -358,7 +363,7 @@ export function QueryChart({
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        {true ? (
+                        {hostStat.blockRate > 0 ? (
                           <>
                             <Shield className="h-4 w-4 text-destructive" />
                             <Badge variant="destructive">{hostStat.blockRate}%</Badge>
