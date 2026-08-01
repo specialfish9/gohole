@@ -1,7 +1,9 @@
 package query
 
 import (
+	"encoding/json"
 	"gohole/internal/database"
+	"math"
 	"time"
 )
 
@@ -10,6 +12,22 @@ type Stats struct {
 	BlockedQueries int     `json:"blockedQueries"`
 	AllowedQueries int     `json:"allowedQueries"`
 	BlockRate      float64 `json:"blockRate"`
+}
+
+func (s Stats) MarshalJSON() ([]byte, error) {
+	// Handle NaN and Inf values for BlockRate, that would cause issues when marshaling to JSON.
+	br := s.BlockRate
+	if math.IsNaN(br) || math.IsInf(br, 0) {
+		br = 0
+	}
+	type Alias Stats
+	return json.Marshal(&struct {
+		BlockRate float64 `json:"blockRate"`
+		*Alias
+	}{
+		BlockRate: br,
+		Alias:     (*Alias)(&s),
+	})
 }
 
 type QueryHistoryPoint struct {
