@@ -52,6 +52,7 @@ func (h *Handler) checkCustomDomains(rc *ReqCtx, question dns.RR) (dns.RR, error
 
 	// Update the request context
 	rc.Custom = true
+	rc.Allowed = true
 	rc.Logger.Debug("Name is a custom domain", "name", rc.Name)
 
 	return answerFromQuestion(question, addr)

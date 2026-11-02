@@ -16,7 +16,7 @@ type Server struct {
 	frontend bool
 }
 
-func NewServer(cfg *Config, qr *QueryRouter) *Server {
+func NewServer(cfg *Config, routers ...Router) *Server {
 	r := chi.NewRouter()
 
 	// Middlewares
@@ -34,15 +34,9 @@ func NewServer(cfg *Config, qr *QueryRouter) *Server {
 		MaxAge:           300, // Maximum value not ignored by any of major browsers
 	}))
 
-	r.Get("/api/queries", errorHandler(qr.getAll))
-	r.Get("/api/queries/stats", errorHandler(qr.getStats))
-	r.Get("/api/queries/stats/history", errorHandler(qr.getStatsHistory))
-	r.Get("/api/hosts/stats", errorHandler(qr.getHostStats))
-	r.Get("/api/domains/stats", errorHandler(qr.getDomainStats))
-
-	r.Get("/api/domains/{name}", errorHandler(qr.getDomainDetails))
-
-	r.Get("/api/blocklist/stats", errorHandler(qr.getBlockListStats))
+	for _, router := range routers {
+		router.Register(r)
+	}
 
 	fe := cfg.ServeFrontend.Or(true)
 	if fe {

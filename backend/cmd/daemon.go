@@ -41,7 +41,12 @@ func NewDaemonRegistry(
 
 	dnsCache := dns.NewCache()
 
-	dnsClient := dns2.NewClient()
+	var dnsClient dns.Client
+	if dns.IsURL(cfg.DNS.Upstream) {
+		dnsClient = dns.NewDohClient()
+	} else {
+		dnsClient = dns2.NewClient()
+	}
 
 	tcpHandler, err := dns.NewHandler(queryService, dns.TCP, dnsCache, &cfg.DNS, dnsClient)
 	if err != nil {
@@ -54,9 +59,14 @@ func NewDaemonRegistry(
 	}
 
 	queryRouter := http.NewQueryRouter(queryService)
+	var httpRouters = []http.Router{queryRouter}
+
+	if cfg.DNS.DoHEnabled.Or(false) {
+		httpRouters = append(httpRouters, http.NewDoHRouter(tcpHandler))
+	}
 
 	daemons := []Daemon{
-		http.NewServer(&cfg.HTTP, queryRouter),
+		http.NewServer(&cfg.HTTP, httpRouters...),
 		dns.NewServer(&cfg.DNS, tcpHandler),
 		dns.NewServer(&cfg.DNS, udpHandler),
 	}
