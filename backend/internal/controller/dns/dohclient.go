@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -46,7 +47,11 @@ func (c *DohClient) Exchange(
 	if err != nil {
 		return nil, 0, fmt.Errorf("doh client: performing http request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			slog.Error("doh client: closing response body: %v\n", err)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, 0, fmt.Errorf("doh client: bad status code %d", resp.StatusCode)
