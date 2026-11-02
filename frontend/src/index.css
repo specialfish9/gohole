@@ -1,123 +1,172 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
 
 /* gohole - DNS Ad Blocker Dashboard Design System 
 Clean, technical interface with monochromatic design
 */
 
-@layer base {
-  :root {
-    /* Light theme - Clean whites and grays */
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
+:root {
+  /* Light theme - Clean whites and grays */
+  --background: 0 0% 100%;
+  --foreground: 240 10% 3.9%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 240 10% 3.9%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 240 10% 3.9%;
 
-    /* Primary - Technical blue for accents */
-    --primary: 221 83% 53%;
-    --primary-foreground: 0 0% 100%;
+  /* Primary - Technical blue for accents */
+  --primary: 221 83% 53%;
+  --primary-foreground: 0 0% 100%;
 
-    /* Secondary - Light gray backgrounds */
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
+  /* Secondary - Light gray backgrounds */
+  --secondary: 240 4.8% 95.9%;
+  --secondary-foreground: 240 5.9% 10%;
 
-    /* Muted - Subtle gray elements */
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
+  /* Muted - Subtle gray elements */
+  --muted: 240 4.8% 95.9%;
+  --muted-foreground: 240 3.8% 46.1%;
 
-    /* Accent - Slightly darker gray */
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
+  /* Accent - Slightly darker gray */
+  --accent: 240 4.8% 95.9%;
+  --accent-foreground: 240 5.9% 10%;
 
-    /* Status colors */
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
-    
-    --success: 142 76% 36%;
-    --success-foreground: 0 0% 100%;
-    
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
+  /* Status colors */
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
 
-    /* Borders and inputs */
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 221 83% 53%;
+  --success: 142 76% 36%;
+  --success-foreground: 0 0% 100%;
 
-    --radius: 0.5rem;
+  --warning: 38 92% 50%;
+  --warning-foreground: 0 0% 100%;
 
-    --sidebar-background: 0 0% 98%;
+  /* Borders and inputs */
+  --border: 240 5.9% 90%;
+  --input: 240 5.9% 90%;
+  --ring: 221 83% 53%;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
+  --radius: 0.5rem;
 
-    --sidebar-primary: 240 5.9% 10%;
+  --sidebar-background: 0 0% 98%;
+  --sidebar-foreground: 240 5.3% 26.1%;
+  --sidebar-primary: 240 5.9% 10%;
+  --sidebar-primary-foreground: 0 0% 98%;
+  --sidebar-accent: 240 4.8% 95.9%;
+  --sidebar-accent-foreground: 240 5.9% 10%;
+  --sidebar-border: 220 13% 91%;
+  --sidebar-ring: 217.2 91.2% 59.8%;
+}
 
-    --sidebar-primary-foreground: 0 0% 98%;
+.dark {
+  /* Dark theme - Deep blacks and grays */
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
 
-    --sidebar-accent: 240 4.8% 95.9%;
+  --card: 240 10% 3.9%;
+  --card-foreground: 0 0% 98%;
 
-    --sidebar-accent-foreground: 240 5.9% 10%;
+  --popover: 240 10% 3.9%;
+  --popover-foreground: 0 0% 98%;
 
-    --sidebar-border: 220 13% 91%;
+  /* Primary - Bright blue for dark theme */
+  --primary: 221 83% 53%;
+  --primary-foreground: 0 0% 100%;
 
-    --sidebar-ring: 217.2 91.2% 59.8%;
+  /* Secondary - Dark gray backgrounds */
+  --secondary: 240 3.7% 15.9%;
+  --secondary-foreground: 0 0% 98%;
+
+  /* Muted - Medium gray elements */
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+
+  /* Accent - Slightly lighter gray */
+  --accent: 240 3.7% 15.9%;
+  --accent-foreground: 0 0% 98%;
+
+  /* Status colors for dark theme */
+  --destructive: 0 60% 60%;
+  --destructive-foreground: 0 0% 100%;
+
+  --success: 142 60% 45%;
+  --success-foreground: 0 0% 100%;
+
+  --warning: 38 92% 50%;
+  --warning-foreground: 0 0% 100%;
+
+  /* Dark borders and inputs */
+  --border: 240 3.7% 15.9%;
+  --input: 240 3.7% 15.9%;
+  --ring: 221 83% 53%;
+  --sidebar-background: 240 5.9% 10%;
+  --sidebar-foreground: 240 4.8% 95.9%;
+  --sidebar-primary: 224.3 76.3% 48%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 240 3.7% 15.9%;
+  --sidebar-accent-foreground: 240 4.8% 95.9%;
+  --sidebar-border: 240 3.7% 15.9%;
+  --sidebar-ring: 217.2 91.2% 59.8%;
+}
+
+@utility container {
+  margin-inline: auto;
+  padding-inline: 2rem;
+  @media (min-width: 1400px) {
+    max-width: 1400px;
   }
+}
 
-  .dark {
-    /* Dark theme - Deep blacks and grays */
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
 
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
 
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
 
-    /* Primary - Bright blue for dark theme */
-    --primary: 221 83% 53%;
-    --primary-foreground: 0 0% 100%;
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
 
-    /* Secondary - Dark gray backgrounds */
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
 
-    /* Muted - Medium gray elements */
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
 
-    /* Accent - Slightly lighter gray */
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
 
-    /* Status colors for dark theme */
-    --destructive: 0 60% 60%;
-    --destructive-foreground: 0 0% 100%;
-    
-    --success: 142 60% 45%;
-    --success-foreground: 0 0% 100%;
-    
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
 
-    /* Dark borders and inputs */
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 221 83% 53%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
+  --color-success: hsl(var(--success));
+  --color-success-foreground: hsl(var(--success-foreground));
+
+  --color-warning: hsl(var(--warning));
+  --color-warning-foreground: hsl(var(--warning-foreground));
+
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+
+  --color-sidebar: hsl(var(--sidebar-background));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+  --color-sidebar-primary: hsl(var(--sidebar-primary));
+  --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
+  --color-sidebar-accent: hsl(var(--sidebar-accent));
+  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
+  --color-sidebar-border: hsl(var(--sidebar-border));
+  --color-sidebar-ring: hsl(var(--sidebar-ring));
 }
 
 @layer base {

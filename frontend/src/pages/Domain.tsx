@@ -12,6 +12,41 @@ const AllowedGranularities = [
   { value: "1d", label: "1 Day" }
 ]
 
+interface CustomTooltipProps {
+  active?: boolean
+  payload?: Array<{ payload: { count: number } }>
+  label?: string
+  format?: Intl.DateTimeFormatOptions
+}
+
+function CustomTooltip({ active, payload, label, format }: CustomTooltipProps) {
+  if (active && payload && payload.length) {
+    return (
+      <div className="rounded-lg border bg-background p-2 shadow-sm">
+        <div className="grid grid-cols-2 gap-2">
+          <div className="flex flex-col">
+            <span className="text-[0.70rem] uppercase text-muted-foreground">
+              Time
+            </span>
+            <span className="font-bold text-muted-foreground">
+              {label && new Date(label).toLocaleString("en-UK", format)}
+            </span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[0.70rem] uppercase text-muted-foreground">
+              Count
+            </span>
+            <span className="font-bold text-primary">
+              {payload[0]?.payload.count}
+            </span>
+          </div>
+        </div>
+      </div>
+    )
+  }
+  return null
+}
+
 export default function Domain() {
   const [searchParams] = useSearchParams();
   const d = searchParams.get("d");
@@ -34,17 +69,14 @@ export default function Domain() {
     }
   }
 
-  useState(() => {
-    if (!d) return;
-    fetchDetails()
-  })
-
   useEffect(() => {
     if (!d) return;
-    fetchDetails()
+    ;(async () => {
+      await fetchDetails()
+    })()
   }, [timeInterval, granularity])
 
-  const dateFormat = () => {
+  const dateFormat = (): Intl.DateTimeFormatOptions => {
     if (granularity === "1m") {
       return {
         hour: "2-digit",
@@ -67,34 +99,6 @@ export default function Domain() {
       hour: "2-digit",
       minute: "2-digit"
     }
-  }
-
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="rounded-lg border bg-background p-2 shadow-sm">
-          <div className="grid grid-cols-2 gap-2">
-            <div className="flex flex-col">
-              <span className="text-[0.70rem] uppercase text-muted-foreground">
-                Time
-              </span>
-              <span className="font-bold text-muted-foreground">
-                {label && new Date(label).toLocaleString("en-UK", dateFormat())}
-              </span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-[0.70rem] uppercase text-muted-foreground">
-                Count
-              </span>
-              <span className="font-bold text-primary">
-                {payload[0].payload.count}
-              </span>
-            </div>
-          </div>
-        </div>
-      )
-    }
-    return null
   }
 
   return (
@@ -145,7 +149,7 @@ export default function Domain() {
                       (value) => new Date(value)
                         .toLocaleString("en-UK", dateFormat())}
                   />
-                  <Tooltip content={<CustomTooltip />} />
+                  <Tooltip content={<CustomTooltip format={dateFormat()} />} />
                   <Legend />
                   <YAxis width={100} />
                   <Line type="monotone" name={d + " queries"} dataKey="count" className="text-primary-foreground" />

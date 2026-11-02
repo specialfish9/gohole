@@ -65,25 +65,6 @@ export default function Dashboard() {
     }
   }
 
-  // Auto-refresh queries every 30 seconds
-  useEffect(() => {
-    fetchStats()
-    fetchQueries()
-    fetchBlocklistStats()
-    fetchHostStats()
-    fetchDomainStats()
-
-    const refreshInterval = setInterval(fetchQueries, 30000)
-    return () => clearInterval(refreshInterval)
-  }, [])
-
-  // Fetch updated chart data when timeInterval or granularity changes
-  useEffect(() => {
-    fetchChartData()
-    fetchHostStats()
-    fetchStats()
-  }, [timeInterval, granularity])
-
   const fetchChartData = async () => {
     try {
       // This will fall back to generated data if the backend endpoints don't exist yet
@@ -92,6 +73,34 @@ export default function Dashboard() {
       console.error('Failed to fetch chart data:', error)
     }
   }
+
+  // Auto-refresh queries every 30 seconds
+  useEffect(() => {
+    ;(async () => {
+      await Promise.all([
+        fetchStats(),
+        fetchQueries(),
+        fetchBlocklistStats(),
+        fetchHostStats(),
+        fetchDomainStats(),
+      ])
+    })()
+    const refreshInterval = setInterval(() => {
+      fetchQueries()
+    }, 30000)
+    return () => clearInterval(refreshInterval)
+  }, [])
+
+  // Fetch updated chart data when timeInterval or granularity changes
+  useEffect(() => {
+    ;(async () => {
+      await Promise.all([
+        fetchChartData(),
+        fetchHostStats(),
+        fetchStats(),
+      ])
+    })()
+  }, [timeInterval, granularity])
 
   // Chart data
   const queriesInInterval = queries.length

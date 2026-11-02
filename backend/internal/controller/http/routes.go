@@ -2,6 +2,7 @@ package http
 
 import (
 	"encoding/json"
+	"fmt"
 	"gohole/internal/query"
 	"net/http"
 
@@ -47,11 +48,11 @@ func (qr *QueryRouter) getAll(w http.ResponseWriter, r *http.Request) error {
 
 	b, err := json.Marshal(&jsonQueries)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to marshal queries: %w", err)
 	}
 	w.WriteHeader(http.StatusOK)
 	if _, err := w.Write(b); err != nil {
-		return err
+		return fmt.Errorf("failed to write response: %w", err)
 	}
 
 	return nil
@@ -70,11 +71,11 @@ func (qr *QueryRouter) getStats(w http.ResponseWriter, r *http.Request) error {
 
 	b, err := json.Marshal(&stats)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to marshal stats: %w", err)
 	}
 	w.WriteHeader(http.StatusOK)
 	if _, err := w.Write(b); err != nil {
-		return err
+		return fmt.Errorf("failed to write response: %w", err)
 	}
 
 	return nil
@@ -97,11 +98,11 @@ func (qr *QueryRouter) getStatsHistory(w http.ResponseWriter, r *http.Request) e
 
 	b, err := json.Marshal(&history)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to marshal history: %w", err)
 	}
 	w.WriteHeader(http.StatusOK)
 	if _, err := w.Write(b); err != nil {
-		return err
+		return fmt.Errorf("failed to write response: %w", err)
 	}
 
 	return nil
@@ -115,11 +116,11 @@ func (qr *QueryRouter) getBlockListStats(w http.ResponseWriter, _ *http.Request)
 
 	b, err := json.Marshal(&stats)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to marshal block list stats: %w", err)
 	}
 	w.WriteHeader(http.StatusOK)
 	if _, err := w.Write(b); err != nil {
-		return err
+		return fmt.Errorf("failed to write response: %w", err)
 	}
 
 	return nil
@@ -138,11 +139,11 @@ func (qr *QueryRouter) getHostStats(w http.ResponseWriter, r *http.Request) erro
 
 	b, err := json.Marshal(&stats)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to marshal host stats: %w", err)
 	}
 	w.WriteHeader(http.StatusOK)
 	if _, err := w.Write(b); err != nil {
-		return err
+		return fmt.Errorf("failed to write response: %w", err)
 	}
 
 	return nil
@@ -161,11 +162,11 @@ func (qr *QueryRouter) getDomainStats(w http.ResponseWriter, r *http.Request) er
 
 	b, err := json.Marshal(&stats)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to marshal domain stats: %w", err)
 	}
 	w.WriteHeader(http.StatusOK)
 	if _, err := w.Write(b); err != nil {
-		return err
+		return fmt.Errorf("failed to write response: %w", err)
 	}
 
 	return nil
@@ -202,11 +203,11 @@ func (qr *QueryRouter) getDomainDetails(w http.ResponseWriter, r *http.Request) 
 
 	b, err := json.Marshal(&details)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to marshal domain details: %w", err)
 	}
 	w.WriteHeader(http.StatusOK)
 	if _, err := w.Write(b); err != nil {
-		return err
+		return fmt.Errorf("failed to write response: %w", err)
 	}
 
 	return nil
