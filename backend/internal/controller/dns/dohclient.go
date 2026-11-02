@@ -49,7 +49,7 @@ func (c *DohClient) Exchange(
 	}
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			slog.Error("doh client: closing response body: %v\n", err)
+			slog.Error("doh client: closing response body", "error", err.Error())
 		}
 	}()
 
